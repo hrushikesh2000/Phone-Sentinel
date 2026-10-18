@@ -1,17 +1,30 @@
 {
   "expo": {
-    "name": "PhoneStatus",
+    "name": "Device Sentinel",
     "slug": "PhoneStatus",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#070B14",
+    "androidStatusBar": {
+      "backgroundColor": "#070B14",
+      "barStyle": "light-content"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.phonestatus.devicesentinel"
     },
     "android": {
+      "package": "com.phonestatus.devicesentinel",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.VIBRATE"
+      ],
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#070B14",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -19,6 +32,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-status-bar",
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "66db27cc-6d11-4cc3-a6a8-094d334f9422"
+      }
     }
   }
 }
