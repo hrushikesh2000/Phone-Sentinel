@@ -15,7 +15,7 @@ export function analyzeSystemHealth({
   drainRatePerHour,
   isDrainAbnormal,
   networkState,
-}) {
+} = {}) {
   const issues = [];
   const recommendations = [];
 

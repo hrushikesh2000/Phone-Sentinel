@@ -24,7 +24,7 @@ export function estimateBatteryTemperature({
   drainRatePerHour,
   isLowPowerMode,
   offset = 0,
-}) {
+} = {}) {
   // Baseline ambient internal temperature
   let baseTemp = 29.8;
 

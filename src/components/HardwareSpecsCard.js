@@ -7,7 +7,7 @@ import { ExplainerModal } from './ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 import { formatBytes, formatUptime } from '../utils/formatters';
 
-export function HardwareSpecsCard({ hardware }) {
+export function HardwareSpecsCard({ hardware = {} }) {
   const { theme } = useTheme();
   const [explainerVisible, setExplainerVisible] = useState(false);
 

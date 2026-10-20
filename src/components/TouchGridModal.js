@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -28,6 +28,32 @@ export function TouchGridModal({ visible, onClose }) {
 
   // Store layout bounds of the grid container for coordinate translation
   const gridLayoutRef = useRef({ x: 0, y: 0, width: SCREEN_WIDTH, height: SCREEN_HEIGHT - 160 });
+  const gridCanvasRef = useRef(null);
+
+  const measureGrid = useCallback(() => {
+    if (gridCanvasRef.current) {
+      if (typeof gridCanvasRef.current.measureInWindow === 'function') {
+        gridCanvasRef.current.measureInWindow((x, y, width, height) => {
+          if (width > 0 && height > 0) {
+            gridLayoutRef.current = { x, y, width, height };
+          }
+        });
+      } else if (typeof gridCanvasRef.current.measure === 'function') {
+        gridCanvasRef.current.measure((fx, fy, width, height, px, py) => {
+          if (width > 0 && height > 0) {
+            gridLayoutRef.current = { x: px, y: py, width, height };
+          }
+        });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (visible && activeTab === 'grid') {
+      const timer = setTimeout(measureGrid, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [visible, activeTab, measureGrid]);
 
   const triggerHaptic = useCallback((style = 'light') => {
     try {
@@ -274,11 +300,11 @@ export function TouchGridModal({ visible, onClose }) {
         {/* Tab 1: Interactive Digitizer Grid */}
         {activeTab === 'grid' && (
           <View
+            ref={gridCanvasRef}
             style={styles.gridCanvas}
-            onLayout={(e) => {
-              e.target.measure((x, y, width, height, pageX, pageY) => {
-                gridLayoutRef.current = { x: pageX, y: pageY, width, height };
-              });
+            onLayout={() => {
+              measureGrid();
+              setTimeout(measureGrid, 80);
             }}
             onStartShouldSetResponder={() => true}
             onMoveShouldSetResponder={() => true}

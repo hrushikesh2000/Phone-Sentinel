@@ -26,6 +26,10 @@ export function useBatteryDiagnostics() {
 
   // Ref to hold the current history without causing listener re-binding loops
   const historyRef = useRef([]);
+  const batteryLevelRef = useRef(batteryLevel);
+  batteryLevelRef.current = batteryLevel;
+  const batteryStateRef = useRef(batteryState);
+  batteryStateRef.current = batteryState;
 
   /**
    * Evaluates rolling telemetry data points to calculate discharge rate per hour
@@ -122,6 +126,7 @@ export function useBatteryDiagnostics() {
   }, [recordTelemetryPoint]);
 
   useEffect(() => {
+    let isCancelled = false;
     let levelSub = null;
     let stateSub = null;
     let powerModeSub = null;
@@ -130,11 +135,13 @@ export function useBatteryDiagnostics() {
     async function initBatteryListeners() {
       try {
         const available = await Battery.isAvailableAsync();
+        if (isCancelled) return;
         setIsSupported(available);
         if (!available) return;
 
         // 1. Initial status fetch
         const initialPower = await Battery.getPowerStateAsync();
+        if (isCancelled) return;
         setBatteryLevel(initialPower.batteryLevel);
         setBatteryState(initialPower.batteryState);
         setLowPowerMode(!!initialPower.lowPowerMode);
@@ -142,49 +149,61 @@ export function useBatteryDiagnostics() {
 
         // 2. Event listener: Battery Level
         levelSub = Battery.addBatteryLevelListener(({ batteryLevel: newLevel }) => {
-          setBatteryLevel(newLevel);
-          recordTelemetryPoint(newLevel, batteryState);
+          if (!isCancelled) {
+            setBatteryLevel(newLevel);
+            recordTelemetryPoint(newLevel, batteryStateRef.current);
+          }
         });
 
         // 3. Event listener: Battery Charging State
         stateSub = Battery.addBatteryStateListener(({ batteryState: newState }) => {
-          setBatteryState(newState);
-          recordTelemetryPoint(batteryLevel, newState);
+          if (!isCancelled) {
+            setBatteryState(newState);
+            recordTelemetryPoint(batteryLevelRef.current, newState);
+          }
         });
 
         // 4. Event listener: Low Power Mode
         if (typeof Battery.addLowPowerModeListener === 'function') {
           powerModeSub = Battery.addLowPowerModeListener(({ lowPowerMode: isLow }) => {
-            setLowPowerMode(isLow);
+            if (!isCancelled) {
+              setLowPowerMode(isLow);
+            }
           });
         }
 
         // 5. Active background sampling ticker (every 30 seconds)
         // Ensures rolling mathematical tracker accumulates samples reliably on Android
         pollInterval = setInterval(async () => {
+          if (isCancelled) return;
           try {
             const current = await Battery.getPowerStateAsync();
-            setBatteryLevel(current.batteryLevel);
-            setBatteryState(current.batteryState);
-            recordTelemetryPoint(current.batteryLevel, current.batteryState);
+            if (!isCancelled) {
+              setBatteryLevel(current.batteryLevel);
+              setBatteryState(current.batteryState);
+              recordTelemetryPoint(current.batteryLevel, current.batteryState);
+            }
           } catch (e) {
             // Ignore background tick read errors
           }
         }, 30000);
       } catch (e) {
-        console.warn('Battery initialization error:', e);
+        if (!isCancelled) {
+          console.warn('Battery initialization error:', e);
+        }
       }
     }
 
     initBatteryListeners();
 
     return () => {
+      isCancelled = true;
       if (levelSub && typeof levelSub.remove === 'function') levelSub.remove();
       if (stateSub && typeof stateSub.remove === 'function') stateSub.remove();
       if (powerModeSub && typeof powerModeSub.remove === 'function') powerModeSub.remove();
       if (pollInterval) clearInterval(pollInterval);
     };
-  }, [recordTelemetryPoint, batteryLevel, batteryState]);
+  }, [recordTelemetryPoint]);
 
   /**
    * Helper to simulate a battery drop for instant live testing & demonstration in Expo Go

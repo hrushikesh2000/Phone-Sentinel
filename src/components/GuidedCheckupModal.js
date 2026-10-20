@@ -69,12 +69,20 @@ export function GuidedCheckupModal({
   }, []);
 
   const measureCanvas = useCallback(() => {
-    if (canvasRef.current && canvasRef.current.measure) {
-      canvasRef.current.measure((fx, fy, width, height, px, py) => {
-        if (width > 0 && height > 0) {
-          canvasLayout.current = { x: px, y: py, width, height };
-        }
-      });
+    if (canvasRef.current) {
+      if (typeof canvasRef.current.measureInWindow === 'function') {
+        canvasRef.current.measureInWindow((x, y, width, height) => {
+          if (width > 0 && height > 0) {
+            canvasLayout.current = { x, y, width, height };
+          }
+        });
+      } else if (typeof canvasRef.current.measure === 'function') {
+        canvasRef.current.measure((fx, fy, width, height, px, py) => {
+          if (width > 0 && height > 0) {
+            canvasLayout.current = { x: px, y: py, width, height };
+          }
+        });
+      }
     }
   }, []);
 
@@ -122,21 +130,39 @@ export function GuidedCheckupModal({
     }
   }, [visible, currentStep, measureCanvas]);
 
-  // Play audio tone on Step 1
+  const stopAudio = useCallback(() => {
+    try {
+      if (playerRef.current) {
+        playerRef.current.pause();
+        playerRef.current.release();
+        playerRef.current = null;
+      }
+    } catch (e) {}
+  }, []);
+
+  // Play audio tone on Step 1 with race condition safety
   useEffect(() => {
-    let activePlayer = null;
+    let isCancelled = false;
 
     async function playStep1Tone() {
       if (visible && currentStep === 1) {
         try {
           await setIsAudioActiveAsync(true);
+          if (isCancelled) return;
           await setAudioModeAsync({
             playsInSilentMode: true,
             staysActiveInBackground: false,
           });
+          if (isCancelled) return;
           const player = createAudioPlayer(TONE_1KHZ);
+          if (isCancelled) {
+            try {
+              player.pause();
+              player.release();
+            } catch (err) {}
+            return;
+          }
           playerRef.current = player;
-          activePlayer = player;
           player.loop = true;
           player.volume = 1.0;
           player.play();
@@ -151,19 +177,10 @@ export function GuidedCheckupModal({
     playStep1Tone();
 
     return () => {
+      isCancelled = true;
       stopAudio();
     };
-  }, [visible, currentStep]);
-
-  const stopAudio = () => {
-    try {
-      if (playerRef.current) {
-        playerRef.current.pause();
-        playerRef.current.release();
-        playerRef.current = null;
-      }
-    } catch (e) {}
-  };
+  }, [visible, currentStep, stopAudio]);
 
   // Step 3 trigger vibration
   useEffect(() => {

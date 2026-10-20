@@ -9,7 +9,7 @@ import { ExplainerModal } from './ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 import { measureNetworkPing } from '../utils/networkPing';
 
-export function NetworkStateCard({ networkInfo }) {
+export function NetworkStateCard({ networkInfo = {} }) {
   const { theme, isDark } = useTheme();
 
   const {

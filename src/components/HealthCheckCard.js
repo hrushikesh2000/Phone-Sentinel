@@ -14,7 +14,7 @@ import { ExplainerModal } from './ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 import { analyzeSystemHealth } from '../utils/healthDiagnostics';
 
-export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
+export function HealthCheckCard({ hardware = {}, batteryData = {}, networkInfo = {} }) {
   const { theme, isDark } = useTheme();
 
   const [isScanning, setIsScanning] = useState(false);
@@ -22,23 +22,36 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
   const [diagnosticResult, setDiagnosticResult] = useState(null);
   const [explainerVisible, setExplainerVisible] = useState(false);
 
+  const timersRef = React.useRef([]);
+
+  React.useEffect(() => {
+    const activeTimers = timersRef.current;
+    return () => {
+      activeTimers.forEach((t) => clearTimeout(t));
+    };
+  }, []);
+
   const runHealthScan = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (e) {}
 
+    // Clear any previous running timers
+    timersRef.current.forEach((t) => clearTimeout(t));
+    timersRef.current = [];
+
     setIsScanning(true);
     setScanStep('Auditing RAM headroom & memory...');
 
-    setTimeout(() => {
+    const t1 = setTimeout(() => {
       setScanStep('Analyzing battery thermal balance & load...');
     }, 450);
 
-    setTimeout(() => {
+    const t2 = setTimeout(() => {
       setScanStep('Verifying storage space & network stability...');
     }, 900);
 
-    setTimeout(() => {
+    const t3 = setTimeout(() => {
       const result = analyzeSystemHealth({
         totalMemoryBytes: hardware.totalMemory,
         maxMemoryBytes: hardware.maxMemory,
@@ -63,6 +76,8 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
       setIsScanning(false);
       setScanStep('');
     }, 1400);
+
+    timersRef.current.push(t1, t2, t3);
   };
 
   return (

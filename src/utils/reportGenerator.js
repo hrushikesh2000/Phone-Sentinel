@@ -5,7 +5,7 @@ import { formatBytes, formatUptime, formatBatteryLevel } from './formatters';
 /**
  * Generate a comprehensive markdown diagnostic report and copy to clipboard.
  */
-export async function copyDiagnosticReport({ hardware, networkInfo, batteryData, healthScore }) {
+export async function copyDiagnosticReport({ hardware = {}, networkInfo = {}, batteryData = {}, healthScore } = {}) {
   const report = `# 📱 Device Sentinel — Diagnostics Report
 Generated: ${new Date().toLocaleString()}
 

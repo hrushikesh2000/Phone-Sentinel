@@ -144,6 +144,9 @@ export function AudioDiagnosticsModal({ visible, onClose }) {
     if (!visible) {
       stopPlayback();
     }
+    return () => {
+      stopPlayback();
+    };
   }, [visible]);
 
   const togglePlayback = async () => {
@@ -171,6 +174,9 @@ export function AudioDiagnosticsModal({ visible, onClose }) {
         console.warn('AudioMode warning:', modeErr);
       }
 
+      // Check if modal was closed while awaiting audio mode
+      if (!visible) return;
+
       // 2. Select appropriate bundled audio asset
       const assetKey =
         selectedChannel !== 'both'
@@ -190,6 +196,13 @@ export function AudioDiagnosticsModal({ visible, onClose }) {
 
       // 4. Create player instance and start looping tone
       const player = createAudioPlayer(audioSource);
+      if (!visible) {
+        try {
+          player.pause();
+          player.release();
+        } catch (e) {}
+        return;
+      }
       player.loop = true;
       player.volume = 1.0;
       player.play();
@@ -223,7 +236,10 @@ export function AudioDiagnosticsModal({ visible, onClose }) {
       visible={visible}
       animationType="slide"
       transparent={false}
-      onRequestClose={onClose}
+      onRequestClose={() => {
+        stopPlayback();
+        onClose();
+      }}
       statusBarTranslucent
     >
       <SafeAreaView style={styles.container}>

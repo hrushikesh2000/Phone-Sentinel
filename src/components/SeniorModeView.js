@@ -66,22 +66,45 @@ export function SeniorModeView({
         </View>
 
         <TouchableOpacity
-          style={styles.switchModeBtn}
+          style={[
+            styles.switchModeBtn,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.12)',
+            },
+          ]}
           onPress={toggleSeniorMode}
           activeOpacity={0.7}
         >
-          <Text style={styles.switchModeText}>Standard</Text>
+          <Text style={[styles.switchModeText, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+            Standard
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* 2. Language Selector Bar (EN | हिन्दी | తెలుగు) */}
-      <View style={styles.languageBar}>
+      <View
+        style={[
+          styles.languageBar,
+          {
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)',
+            borderColor: theme.cardBorder,
+            borderWidth: isDark ? 0 : 1,
+          },
+        ]}
+      >
         <TouchableOpacity
           style={[styles.langPill, language === 'en' && styles.langPillActive]}
           onPress={() => setLanguage('en')}
           activeOpacity={0.8}
         >
-          <Text style={[styles.langText, language === 'en' && styles.langTextActive]}>
+          <Text
+            style={[
+              styles.langText,
+              { color: isDark ? '#94A3B8' : '#475569' },
+              language === 'en' && styles.langTextActive,
+            ]}
+          >
             English
           </Text>
         </TouchableOpacity>
@@ -91,7 +114,13 @@ export function SeniorModeView({
           onPress={() => setLanguage('hi')}
           activeOpacity={0.8}
         >
-          <Text style={[styles.langText, language === 'hi' && styles.langTextActive]}>
+          <Text
+            style={[
+              styles.langText,
+              { color: isDark ? '#94A3B8' : '#475569' },
+              language === 'hi' && styles.langTextActive,
+            ]}
+          >
             हिन्दी
           </Text>
         </TouchableOpacity>
@@ -101,7 +130,13 @@ export function SeniorModeView({
           onPress={() => setLanguage('te')}
           activeOpacity={0.8}
         >
-          <Text style={[styles.langText, language === 'te' && styles.langTextActive]}>
+          <Text
+            style={[
+              styles.langText,
+              { color: isDark ? '#94A3B8' : '#475569' },
+              language === 'te' && styles.langTextActive,
+            ]}
+          >
             తెలుగు
           </Text>
         </TouchableOpacity>
@@ -245,22 +280,37 @@ export function SeniorModeView({
         </View>
 
         <View style={styles.rxItem}>
-          <View style={styles.rxNumberCircle}>
-            <Text style={styles.rxNumberText}>1</Text>
+          <View
+            style={[
+              styles.rxNumberCircle,
+              { backgroundColor: isDark ? 'rgba(0, 242, 254, 0.15)' : 'rgba(2, 132, 199, 0.12)' },
+            ]}
+          >
+            <Text style={[styles.rxNumberText, { color: isDark ? '#00F2FE' : '#0284C7' }]}>1</Text>
           </View>
           <Text style={[styles.rxText, { color: theme.textSecondary }]}>{t('tip_1')}</Text>
         </View>
 
         <View style={styles.rxItem}>
-          <View style={styles.rxNumberCircle}>
-            <Text style={styles.rxNumberText}>2</Text>
+          <View
+            style={[
+              styles.rxNumberCircle,
+              { backgroundColor: isDark ? 'rgba(0, 242, 254, 0.15)' : 'rgba(2, 132, 199, 0.12)' },
+            ]}
+          >
+            <Text style={[styles.rxNumberText, { color: isDark ? '#00F2FE' : '#0284C7' }]}>2</Text>
           </View>
           <Text style={[styles.rxText, { color: theme.textSecondary }]}>{t('tip_2')}</Text>
         </View>
 
         <View style={styles.rxItem}>
-          <View style={styles.rxNumberCircle}>
-            <Text style={styles.rxNumberText}>3</Text>
+          <View
+            style={[
+              styles.rxNumberCircle,
+              { backgroundColor: isDark ? 'rgba(0, 242, 254, 0.15)' : 'rgba(2, 132, 199, 0.12)' },
+            ]}
+          >
+            <Text style={[styles.rxNumberText, { color: isDark ? '#00F2FE' : '#0284C7' }]}>3</Text>
           </View>
           <Text style={[styles.rxText, { color: theme.textSecondary }]}>{t('tip_3')}</Text>
         </View>

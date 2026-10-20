@@ -25,27 +25,32 @@ export function EnvironmentSensorsCard() {
   // Setup Magnetometer
   useEffect(() => {
     let magSub = null;
+    let isCancelled = false;
 
     async function initMag() {
       try {
         const available = await Magnetometer.isAvailableAsync();
+        if (isCancelled) return;
         setMagAvailable(available);
         if (!available) return;
 
         Magnetometer.setUpdateInterval(100);
-        if (magActive) {
+        if (magActive && !isCancelled) {
           magSub = Magnetometer.addListener((data) => {
-            setMagData(data);
+            if (!isCancelled) {
+              setMagData(data);
+            }
           });
         }
       } catch (err) {
-        setMagAvailable(false);
+        if (!isCancelled) setMagAvailable(false);
       }
     }
 
     initMag();
 
     return () => {
+      isCancelled = true;
       if (magSub && typeof magSub.remove === 'function') {
         magSub.remove();
       }
@@ -55,25 +60,32 @@ export function EnvironmentSensorsCard() {
   // Setup Light Sensor
   useEffect(() => {
     let lightSub = null;
+    let isCancelled = false;
 
     async function initLight() {
       try {
         const available = await LightSensor.isAvailableAsync();
+        if (isCancelled) return;
         setLightAvailable(available);
         if (!available) return;
 
         LightSensor.setUpdateInterval(250);
-        lightSub = LightSensor.addListener((data) => {
-          setLuxData(data.illuminance);
-        });
+        if (!isCancelled) {
+          lightSub = LightSensor.addListener((data) => {
+            if (!isCancelled) {
+              setLuxData(data.illuminance);
+            }
+          });
+        }
       } catch (err) {
-        setLightAvailable(false);
+        if (!isCancelled) setLightAvailable(false);
       }
     }
 
     initLight();
 
     return () => {
+      isCancelled = true;
       if (lightSub && typeof lightSub.remove === 'function') {
         lightSub.remove();
       }

@@ -25,9 +25,9 @@ const pixelRatio = PixelRatio.get();
 export function HardwarePassportModal({
   visible,
   onClose,
-  hardware,
-  batteryData,
-  networkInfo,
+  hardware = {},
+  batteryData = {},
+  networkInfo = {},
 }) {
   const { language } = useTheme();
   const [copied, setCopied] = useState(false);

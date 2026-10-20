@@ -17,28 +17,33 @@ export function SensorMotionCard() {
 
   useEffect(() => {
     let subscription = null;
+    let isCancelled = false;
 
     async function initSensors() {
       try {
         const available = await Accelerometer.isAvailableAsync();
+        if (isCancelled) return;
         setIsAvailable(available);
         if (!available) return;
 
         Accelerometer.setUpdateInterval(100);
 
-        if (isActive) {
+        if (isActive && !isCancelled) {
           subscription = Accelerometer.addListener((accelData) => {
-            setData(accelData);
+            if (!isCancelled) {
+              setData(accelData);
+            }
           });
         }
       } catch (e) {
-        setIsAvailable(false);
+        if (!isCancelled) setIsAvailable(false);
       }
     }
 
     initSensors();
 
     return () => {
+      isCancelled = true;
       if (subscription && typeof subscription.remove === 'function') {
         subscription.remove();
       }
