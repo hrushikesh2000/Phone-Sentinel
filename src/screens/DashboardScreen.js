@@ -6,6 +6,9 @@ import { SectionCard } from '../components/SectionCard';
 import { StatBadge } from '../components/StatBadge';
 import { HardwarePassportModal } from '../components/HardwarePassportModal';
 import { ExplainerModal } from '../components/ExplainerModal';
+import { SeniorModeView } from '../components/SeniorModeView';
+import { GuidedCheckupModal } from '../components/GuidedCheckupModal';
+import { sharePhoneHealthWithFamily } from '../utils/familyShare';
 import { useTheme } from '../context/ThemeContext';
 import { formatBytes, formatBatteryLevel, formatUptime } from '../utils/formatters';
 import { estimateBatteryTemperature } from '../utils/batteryThermal';
@@ -17,9 +20,11 @@ export function DashboardScreen({
   onNavigate,
   onCopyReport,
 }) {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, isSeniorMode, language, t } = useTheme();
   const [passportVisible, setPassportVisible] = useState(false);
+  const [checkupVisible, setCheckupVisible] = useState(false);
   const [explainerTopic, setExplainerTopic] = useState(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const percentage = batteryData.batteryLevel !== null ? Math.round(batteryData.batteryLevel * 100) : 0;
   const isCharging = batteryData.batteryState === 2 || batteryData.batteryState === 3;
@@ -44,6 +49,18 @@ export function DashboardScreen({
     } catch (e) {}
     onNavigate(tabId);
   };
+
+  // If Senior / Simple Mode is toggled ON, render full accessible view
+  if (isSeniorMode) {
+    return (
+      <SeniorModeView
+        hardware={hardware}
+        batteryData={batteryData}
+        networkInfo={networkInfo}
+        onNavigateTab={onNavigate}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -130,6 +147,44 @@ export function DashboardScreen({
           <Ionicons name="chevron-forward" size={18} color={theme.danger} />
         </TouchableOpacity>
       )}
+
+      {/* Friendly 1-Tap Doctor Checkup & WhatsApp Family Help Row */}
+      <View style={styles.seniorQuickBar}>
+        <TouchableOpacity
+          style={styles.doctorCheckupButton}
+          onPress={() => {
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            } catch (e) {}
+            setCheckupVisible(true);
+          }}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="medkit" size={19} color="#050811" />
+          <Text style={styles.doctorCheckupText}>{t('doctor_checkup_btn')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.whatsAppQuickBtn}
+          onPress={async () => {
+            const res = await sharePhoneHealthWithFamily({
+              hardware,
+              batteryData,
+              language,
+            });
+            if (res.success) {
+              setShareCopied(true);
+              setTimeout(() => setShareCopied(false), 3500);
+            }
+          }}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" />
+          <Text style={styles.whatsAppQuickText}>
+            {shareCopied ? '✓ Copied' : 'Family Share'}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* 3. The 4 Friendly Telemetry Cards */}
       <View style={styles.matrixGrid}>
@@ -413,6 +468,15 @@ export function DashboardScreen({
         topicKey={explainerTopic}
         onClose={() => setExplainerTopic(null)}
       />
+
+      {/* 1-Tap Guided Phone Doctor Checkup Wizard */}
+      <GuidedCheckupModal
+        visible={checkupVisible}
+        onClose={() => setCheckupVisible(false)}
+        hardware={hardware}
+        batteryData={batteryData}
+        networkInfo={networkInfo}
+      />
     </View>
   );
 }
@@ -579,5 +643,53 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     marginTop: 2,
     lineHeight: 16,
+  },
+  seniorQuickBar: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+  doctorCheckupButton: {
+    flex: 1.3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#00F2FE',
+    borderRadius: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 10,
+    gap: 7,
+    shadowColor: '#00F2FE',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  doctorCheckupText: {
+    color: '#050811',
+    fontSize: 13.5,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  whatsAppQuickBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#25D366',
+    borderRadius: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 10,
+    gap: 6,
+    shadowColor: '#25D366',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  whatsAppQuickText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
   },
 });

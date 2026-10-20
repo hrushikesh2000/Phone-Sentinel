@@ -12,7 +12,7 @@ export function TopNavBar({
   isCharging,
   onCopyReport,
 }) {
-  const { theme, isDark, toggleTheme } = useTheme();
+  const { theme, isDark, toggleTheme, isSeniorMode, toggleSeniorMode, language, setLanguage } = useTheme();
 
   // Spin animation for refresh button
   const spinAnim = useRef(new Animated.Value(0)).current;
@@ -78,6 +78,47 @@ export function TopNavBar({
               </Text>
             </View>
           )}
+
+          {/* Senior Mode Toggle (👓) */}
+          <TouchableOpacity
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: isSeniorMode ? 'rgba(0, 242, 254, 0.18)' : theme.card,
+                borderColor: isSeniorMode ? '#00F2FE' : theme.cardBorder,
+              },
+            ]}
+            onPress={toggleSeniorMode}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name={isSeniorMode ? 'glasses' : 'glasses-outline'}
+              size={18}
+              color={isSeniorMode ? '#00F2FE' : theme.textPrimary}
+            />
+          </TouchableOpacity>
+
+          {/* Quick Language Switcher (EN / हि / తె) */}
+          <TouchableOpacity
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+              },
+            ]}
+            onPress={() => {
+              const next = language === 'en' ? 'hi' : language === 'hi' ? 'te' : 'en';
+              setLanguage(next);
+            }}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.langBtnText, { color: theme.primary }]}>
+              {language === 'hi' ? 'हि' : language === 'te' ? 'తె' : 'EN'}
+            </Text>
+          </TouchableOpacity>
 
           {/* Theme Switcher Toggle (Light ☀️ / Dark 🌙) */}
           <TouchableOpacity
@@ -202,5 +243,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  langBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
   },
 });

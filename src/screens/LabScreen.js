@@ -22,6 +22,7 @@ import { AudioDiagnosticsModal } from '../components/AudioDiagnosticsModal';
 import { HardwarePassportModal } from '../components/HardwarePassportModal';
 import { HealthCheckCard } from '../components/HealthCheckCard';
 import { ExplainerModal } from '../components/ExplainerModal';
+import { GuidedCheckupModal } from '../components/GuidedCheckupModal';
 import { useTheme } from '../context/ThemeContext';
 
 export function LabScreen({ hardware, batteryData, networkInfo }) {
@@ -31,6 +32,7 @@ export function LabScreen({ hardware, batteryData, networkInfo }) {
   const [touchModalVisible, setTouchModalVisible] = useState(false);
   const [audioModalVisible, setAudioModalVisible] = useState(false);
   const [passportModalVisible, setPassportModalVisible] = useState(false);
+  const [checkupModalVisible, setCheckupModalVisible] = useState(false);
   const [activeFeedback, setActiveFeedback] = useState(null);
   const [explainerTopic, setExplainerTopic] = useState(null);
 
@@ -88,6 +90,22 @@ export function LabScreen({ hardware, batteryData, networkInfo }) {
 
   return (
     <View style={styles.container}>
+      {/* 1-Tap Doctor Checkup Quick Launch Banner */}
+      <TouchableOpacity
+        style={styles.checkupBanner}
+        onPress={() => setCheckupModalVisible(true)}
+        activeOpacity={0.85}
+      >
+        <View style={styles.checkupBannerIcon}>
+          <Ionicons name="medkit" size={24} color="#050811" />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={styles.checkupBannerTitle}>2-Minute Full Phone Checkup</Text>
+          <Text style={styles.checkupBannerSub}>Step-by-step speaker, screen touch & vibration check</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#050811" />
+      </TouchableOpacity>
+
       {/* 1. Hardware Inspection Passport Card */}
       <SectionCard
         icon="shield-checkmark"
@@ -356,6 +374,15 @@ export function LabScreen({ hardware, batteryData, networkInfo }) {
         topicKey={explainerTopic}
         onClose={() => setExplainerTopic(null)}
       />
+
+      {/* 1-Tap Guided Phone Doctor Checkup Wizard */}
+      <GuidedCheckupModal
+        visible={checkupModalVisible}
+        onClose={() => setCheckupModalVisible(false)}
+        hardware={hardware}
+        batteryData={batteryData}
+        networkInfo={networkInfo}
+      />
     </View>
   );
 }
@@ -417,5 +444,38 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '700',
     marginLeft: 8,
+  },
+  checkupBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#00F2FE',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 16,
+    shadowColor: '#00F2FE',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  checkupBannerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(5, 8, 17, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkupBannerTitle: {
+    color: '#050811',
+    fontSize: 15.5,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  checkupBannerSub: {
+    color: 'rgba(5, 8, 17, 0.75)',
+    fontSize: 11.5,
+    marginTop: 2,
+    fontWeight: '600',
   },
 });

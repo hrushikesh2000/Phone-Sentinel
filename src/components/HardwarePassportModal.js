@@ -15,6 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { ExplainerModal } from './ExplainerModal';
+import { sharePhoneHealthWithFamily } from '../utils/familyShare';
+import { useTheme } from '../context/ThemeContext';
 import { formatBytes, formatUptime, formatBatteryLevel } from '../utils/formatters';
 
 const screen = Dimensions.get('screen');
@@ -27,6 +29,7 @@ export function HardwarePassportModal({
   batteryData,
   networkInfo,
 }) {
+  const { language } = useTheme();
   const [copied, setCopied] = useState(false);
   const [explainerVisible, setExplainerVisible] = useState(false);
 
@@ -261,6 +264,16 @@ Generated via Phone Sentinel Inspection Suite`;
             </Text>
           </TouchableOpacity>
 
+          {/* Send via WhatsApp Button */}
+          <TouchableOpacity
+            style={styles.whatsAppShareBtn}
+            onPress={() => sharePhoneHealthWithFamily({ hardware, batteryData, language })}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Text style={styles.whatsAppBtnText}>Send to Family on WhatsApp</Text>
+          </TouchableOpacity>
+
           <Text style={styles.disclaimerText}>
             This passport is cryptographically styled and generated using Phone Sentinel's on-device sensor & telemetry framework.
           </Text>
@@ -482,6 +495,20 @@ const styles = StyleSheet.create({
   },
   exportBtnText: {
     color: '#070B14',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  whatsAppShareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#25D366',
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginBottom: 14,
+  },
+  whatsAppBtnText: {
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
   },

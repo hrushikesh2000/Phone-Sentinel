@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
+import { TRANSLATIONS } from '../utils/translations';
 
 export const LIGHT_THEME = {
   isDark: false,
@@ -103,10 +104,17 @@ const ThemeContext = createContext({
   theme: DARK_THEME,
   isDark: true,
   toggleTheme: () => {},
+  isSeniorMode: false,
+  toggleSeniorMode: () => {},
+  language: 'en',
+  setLanguage: () => {},
+  t: (key) => key,
 });
 
 export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(true);
+  const [isSeniorMode, setIsSeniorMode] = useState(false);
+  const [language, setLanguage] = useState('en');
 
   const toggleTheme = () => {
     try {
@@ -115,10 +123,40 @@ export function ThemeProvider({ children }) {
     setIsDark((prev) => !prev);
   };
 
+  const toggleSeniorMode = () => {
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {}
+    setIsSeniorMode((prev) => !prev);
+  };
+
+  const handleSetLanguage = (lang) => {
+    try {
+      Haptics.selectionAsync();
+    } catch (e) {}
+    setLanguage(lang);
+  };
+
+  const t = (key) => {
+    const langDict = TRANSLATIONS[language] || TRANSLATIONS.en;
+    return langDict[key] || TRANSLATIONS.en[key] || key;
+  };
+
   const theme = useMemo(() => (isDark ? DARK_THEME : LIGHT_THEME), [isDark]);
 
   return (
-    <ThemeContext.Provider value={{ theme, isDark, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        isDark,
+        toggleTheme,
+        isSeniorMode,
+        toggleSeniorMode,
+        language,
+        setLanguage: handleSetLanguage,
+        t,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
