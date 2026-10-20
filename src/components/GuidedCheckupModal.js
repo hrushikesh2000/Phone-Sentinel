@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Modal,
   View,
@@ -10,6 +10,7 @@ import {
   StatusBar,
   Dimensions,
   Vibration,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -39,7 +40,87 @@ export function GuidedCheckupModal({
   const [shareSuccess, setShareSuccess] = useState(false);
 
   const playerRef = useRef(null);
-  const touchCanvasRef = useRef({ x: 0, y: 0, width: SCREEN_WIDTH - 40, height: 220 });
+  const canvasRef = useRef(null);
+  const canvasLayout = useRef({ x: 16, y: 180, width: SCREEN_WIDTH - 32, height: 260 });
+
+  // Mark individual box as cleaned
+  const markClean = useCallback((col, row) => {
+    if (col < 0 || col >= 2 || row < 0 || row >= 3) return;
+    const key = `${col}_${row}`;
+    setTouchedBoxes((prev) => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch (e) {}
+
+      // All 6 cleaned automatically advances to step 3!
+      if (next.size === 6) {
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (e) {}
+        setTimeout(() => {
+          setCurrentStep(3);
+        }, 400);
+      }
+      return next;
+    });
+  }, []);
+
+  const measureCanvas = useCallback(() => {
+    if (canvasRef.current && canvasRef.current.measure) {
+      canvasRef.current.measure((fx, fy, width, height, px, py) => {
+        if (width > 0 && height > 0) {
+          canvasLayout.current = { x: px, y: py, width, height };
+        }
+      });
+    }
+  }, []);
+
+  // Process touch point against canvas layout
+  const processTouchCoord = useCallback((screenX, screenY) => {
+    const { x, y, width, height } = canvasLayout.current;
+    if (width <= 0 || height <= 0) return;
+    const relX = screenX - x;
+    const relY = screenY - y;
+
+    // Generous bounding box for comfortable rubbing across edges
+    if (relX >= -20 && relX <= width + 20 && relY >= -20 && relY <= height + 20) {
+      const col = Math.min(1, Math.max(0, Math.floor((relX / width) * 2)));
+      const row = Math.min(2, Math.max(0, Math.floor((relY / height) * 3)));
+      markClean(col, row);
+    }
+  }, [markClean]);
+
+  // PanResponder to handle smooth uninterrupted dragging/wiping across cells
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      onPanResponderGrant: (evt, gestureState) => {
+        const px = evt.nativeEvent.pageX || gestureState.x0;
+        const py = evt.nativeEvent.pageY || gestureState.y0;
+        processTouchCoord(px, py);
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        const px = evt.nativeEvent.pageX || gestureState.moveX;
+        const py = evt.nativeEvent.pageY || gestureState.moveY;
+        processTouchCoord(px, py);
+      },
+      onPanResponderTerminationRequest: () => false,
+    })
+  ).current;
+
+  // Remeasure canvas when entering step 2
+  useEffect(() => {
+    if (visible && currentStep === 2) {
+      const timer = setTimeout(measureCanvas, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [visible, currentStep, measureCanvas]);
 
   // Play audio tone on Step 1
   useEffect(() => {
@@ -92,48 +173,6 @@ export function GuidedCheckupModal({
       } catch (e) {}
     }
   }, [visible, currentStep]);
-
-  // Handle Box touches on Step 2
-  const handleTouchMove = (evt) => {
-    const touches = evt.nativeEvent.touches;
-    if (!touches || touches.length === 0) return;
-
-    const { width: w, height: h } = touchCanvasRef.current;
-    const boxW = w / 2;
-    const boxH = h / 3;
-
-    for (let i = 0; i < touches.length; i++) {
-      const touch = touches[i];
-      const relX = touch.locationX;
-      const relY = touch.locationY;
-
-      const col = Math.floor(relX / boxW);
-      const row = Math.floor(relY / boxH);
-
-      if (col >= 0 && col < 2 && row >= 0 && row < 3) {
-        const key = `${col}_${row}`;
-        setTouchedBoxes((prev) => {
-          if (prev.has(key)) return prev;
-          const next = new Set(prev);
-          next.add(key);
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          } catch (e) {}
-
-          // All 6 cleaned!
-          if (next.size === 6) {
-            try {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } catch (e) {}
-            setTimeout(() => {
-              setCurrentStep(3);
-            }, 400);
-          }
-          return next;
-        });
-      }
-    }
-  };
 
   const handleSpeakerAnswer = (passed) => {
     stopAudio();
@@ -221,7 +260,11 @@ export function GuidedCheckupModal({
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={currentStep !== 2}
+        >
           {/* STEP 1: Sound & Speaker */}
           {currentStep === 1 && (
             <View style={styles.stepBox}>
@@ -254,36 +297,83 @@ export function GuidedCheckupModal({
                 {touchedBoxes.size} / 6 {t('wizard_touch_progress')}
               </Text>
 
+              {/* Interactive Wiping Canvas */}
               <View
+                ref={canvasRef}
                 style={styles.touchGridCanvas}
-                onStartShouldSetResponder={() => true}
-                onMoveShouldSetResponder={() => true}
-                onResponderGrant={handleTouchMove}
-                onResponderMove={handleTouchMove}
+                {...panResponder.panHandlers}
+                onLayout={() => {
+                  measureCanvas();
+                  setTimeout(measureCanvas, 80);
+                }}
               >
                 {[0, 1, 2].map((r) => (
                   <View key={`row_${r}`} style={styles.gridRow}>
                     {[0, 1].map((c) => {
                       const isClean = touchedBoxes.has(`${c}_${r}`);
                       return (
-                        <View
+                        <TouchableOpacity
                           key={`box_${c}_${r}`}
                           style={[
                             styles.touchCell,
                             isClean ? styles.touchCellClean : styles.touchCellDusty,
                           ]}
+                          onPress={() => markClean(c, r)}
+                          activeOpacity={0.7}
                         >
                           <Ionicons
                             name={isClean ? 'checkmark-circle' : 'hand-left-outline'}
-                            size={28}
-                            color={isClean ? '#050811' : 'rgba(255,255,255,0.4)'}
+                            size={30}
+                            color={isClean ? '#050811' : 'rgba(255,255,255,0.45)'}
                           />
-                        </View>
+                          <Text
+                            style={[
+                              styles.touchCellText,
+                              isClean ? styles.touchCellTextClean : styles.touchCellTextDusty,
+                            ]}
+                          >
+                            {isClean ? 'Clean ✓' : 'Swipe / Tap'}
+                          </Text>
+                        </TouchableOpacity>
                       );
                     })}
                   </View>
                 ))}
               </View>
+
+              {/* Proceed Action Button so user is never stuck */}
+              <TouchableOpacity
+                style={[
+                  styles.continueTouchBtn,
+                  touchedBoxes.size > 0 ? styles.continueTouchBtnActive : styles.continueTouchBtnMuted,
+                ]}
+                onPress={() => {
+                  try {
+                    Haptics.selectionAsync();
+                  } catch (e) {}
+                  setCurrentStep(3);
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={touchedBoxes.size > 0 ? 'checkmark-circle' : 'arrow-forward-circle-outline'}
+                  size={20}
+                  color={touchedBoxes.size > 0 ? '#050811' : '#94A3B8'}
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  style={[
+                    styles.continueTouchText,
+                    touchedBoxes.size > 0 ? styles.continueTouchTextActive : styles.continueTouchTextMuted,
+                  ]}
+                >
+                  {touchedBoxes.size === 6
+                    ? 'All 6 Cleaned! Proceed to Next Test →'
+                    : touchedBoxes.size > 0
+                    ? `Cleaned (${touchedBoxes.size}/6) • Proceed to Step 3 →`
+                    : 'Skip to Vibration Test →'}
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -551,6 +641,50 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
     borderWidth: 1.5,
     borderColor: '#34D399',
+  },
+  touchCellText: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  touchCellTextDusty: {
+    color: '#94A3B8',
+  },
+  touchCellTextClean: {
+    color: '#050811',
+    fontWeight: '800',
+  },
+  continueTouchBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginTop: 14,
+  },
+  continueTouchBtnActive: {
+    backgroundColor: '#00F2FE',
+    shadowColor: '#00F2FE',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  continueTouchBtnMuted: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  continueTouchText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  continueTouchTextActive: {
+    color: '#050811',
+  },
+  continueTouchTextMuted: {
+    color: '#94A3B8',
   },
   certCard: {
     flexDirection: 'row',
