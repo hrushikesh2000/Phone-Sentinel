@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SectionCard } from './SectionCard';
 import { StatBadge } from './StatBadge';
+import { ExplainerModal } from './ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 import { analyzeSystemHealth } from '../utils/healthDiagnostics';
 
@@ -19,6 +20,7 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanStep, setScanStep] = useState('');
   const [diagnosticResult, setDiagnosticResult] = useState(null);
+  const [explainerVisible, setExplainerVisible] = useState(false);
 
   const runHealthScan = () => {
     try {
@@ -70,6 +72,7 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
       title="System Health Audit"
       subtitle="Comprehensive performance & diagnostic analysis"
       badge={<StatBadge label="Diagnostic" variant="primary" size="small" />}
+      onHelpPress={() => setExplainerVisible(true)}
     >
       {/* Prominent Scan Action Button */}
       <TouchableOpacity
@@ -235,6 +238,13 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
           </View>
         </View>
       )}
+
+      {/* Plain-English Audit Explainer */}
+      <ExplainerModal
+        visible={explainerVisible}
+        topicKey="system_health_audit"
+        onClose={() => setExplainerVisible(false)}
+      />
     </SectionCard>
   );
 }

@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { SectionCard } from './SectionCard';
 import { InfoRow } from './InfoRow';
 import { StatBadge } from './StatBadge';
+import { ExplainerModal } from './ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 import { formatBatteryLevel, formatDrainRate } from '../utils/formatters';
 
@@ -28,6 +29,7 @@ export function BatteryDiagnosticsCard({ batteryData }) {
   const [showDemoControls, setShowDemoControls] = useState(false);
   const [longevityGuard, setLongevityGuard] = useState(true);
   const [guardAlertDismissed, setGuardAlertDismissed] = useState(false);
+  const [explainerTopic, setExplainerTopic] = useState(null);
 
   // Parse battery state into human-readable details
   let stateTitle = 'Discharging';
@@ -131,6 +133,7 @@ export function BatteryDiagnosticsCard({ batteryData }) {
       title="Battery Telemetry"
       subtitle="Live charge percentage & discharge velocity tracker"
       badge={<StatBadge label={stateTitle} variant={stateVariant} size="small" />}
+      onHelpPress={() => setExplainerTopic('battery_drain_rate')}
     >
       {/* Live Battery Gauge Hero */}
       <View
@@ -323,7 +326,16 @@ export function BatteryDiagnosticsCard({ batteryData }) {
           <View style={styles.guardLabelWrap}>
             <Ionicons name="shield-checkmark-outline" size={18} color="#10B981" />
             <View style={{ marginLeft: 8, flex: 1 }}>
-              <Text style={[styles.guardTitle, { color: theme.textPrimary }]}>80% Battery Longevity Guard</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={[styles.guardTitle, { color: theme.textPrimary }]}>80% Battery Longevity Guard</Text>
+                <TouchableOpacity
+                  onPress={() => setExplainerTopic('battery_80_guard')}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={{ marginLeft: 6 }}
+                >
+                  <Ionicons name="help-circle-outline" size={16} color="#10B981" />
+                </TouchableOpacity>
+              </View>
               <Text style={[styles.guardSubtitle, { color: theme.textSecondary }]}>
                 Tactile warning when battery reaches 80% while charging
               </Text>
@@ -483,6 +495,13 @@ export function BatteryDiagnosticsCard({ batteryData }) {
           </View>
         )}
       </View>
+
+      {/* Plain-English Explainer Modal */}
+      <ExplainerModal
+        visible={!!explainerTopic}
+        topicKey={explainerTopic}
+        onClose={() => setExplainerTopic(null)}
+      />
     </SectionCard>
   );
 }

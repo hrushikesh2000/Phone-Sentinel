@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { SectionCard } from './SectionCard';
 import { InfoRow } from './InfoRow';
 import { StatBadge } from './StatBadge';
+import { ExplainerModal } from './ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 import { measureNetworkPing } from '../utils/networkPing';
 
@@ -21,6 +22,7 @@ export function NetworkStateCard({ networkInfo }) {
 
   const [pingResult, setPingResult] = useState(null);
   const [isTestingPing, setIsTestingPing] = useState(false);
+  const [explainerVisible, setExplainerVisible] = useState(false);
 
   const handleTestPing = async () => {
     setIsTestingPing(true);
@@ -58,6 +60,7 @@ export function NetworkStateCard({ networkInfo }) {
       title="Network & Connectivity"
       subtitle="Interface IP, internet gateway & latency"
       badge={<StatBadge label="Network" variant="info" size="small" />}
+      onHelpPress={() => setExplainerVisible(true)}
     >
       {/* Network Type Hero Highlight */}
       <View
@@ -184,6 +187,13 @@ export function NetworkStateCard({ networkInfo }) {
           </Text>
         )}
       </View>
+
+      {/* Plain-English Network Explainer */}
+      <ExplainerModal
+        visible={explainerVisible}
+        topicKey="network_latency_ping"
+        onClose={() => setExplainerVisible(false)}
+      />
     </SectionCard>
   );
 }

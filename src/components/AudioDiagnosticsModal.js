@@ -16,6 +16,7 @@ import {
   setAudioModeAsync,
   setIsAudioActiveAsync,
 } from 'expo-audio';
+import { ExplainerModal } from './ExplainerModal';
 
 // Statically bundled 16-bit PCM WAV tone assets
 const TONE_ASSETS = {
@@ -31,29 +32,29 @@ const FREQUENCIES = [
   {
     freq: 250,
     name: '250 Hz',
-    band: 'Deep Bass Resonance',
-    desc: 'Tests low-frequency diaphragm excursion & chassis resonance.',
+    band: 'Deep Bass Hum',
+    desc: 'Low motorized hum (250 vibrations/sec). Tests if speaker drum can push deep sound without buzzing.',
     icon: 'radio-outline',
   },
   {
     freq: 1000,
     name: '1 kHz',
-    band: 'Mid Standard Reference',
-    desc: 'Telephony & dialogue reference standard for speech clarity.',
+    band: 'Voice Call Pitch',
+    desc: 'Classic telephone dial tone (1,000 vib/sec). Tests voice clarity for everyday phone calls.',
     icon: 'mic-outline',
   },
   {
     freq: 4000,
     name: '4 kHz',
-    band: 'High Presence Tone',
-    desc: 'Tests upper vocal harmonics, transient response & definition.',
+    band: 'High Whistle',
+    desc: 'High electronic whistle (4,000 vib/sec). Tests clear pronunciation of "S", "T", and consonants.',
     icon: 'musical-notes-outline',
   },
   {
     freq: 8000,
     name: '8 kHz',
-    band: 'Treble Sibilance Limit',
-    desc: 'High-frequency limit test for micro-tweeters & ear speakers.',
+    band: 'Ultra-High Treble',
+    desc: 'Sharp thin chime (8,000 vib/sec). Pushes mini speaker cone to its maximum physical speed.',
     icon: 'pulse-outline',
   },
 ];
@@ -70,6 +71,7 @@ export function AudioDiagnosticsModal({ visible, onClose }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [assessment, setAssessment] = useState(null); // 'pass' | 'rattle' | 'silent'
   const [playbackError, setPlaybackError] = useState(null);
+  const [explainerVisible, setExplainerVisible] = useState(false);
 
   const playerRef = useRef(null);
 
@@ -338,6 +340,29 @@ export function AudioDiagnosticsModal({ visible, onClose }) {
             ) : null}
           </View>
 
+          {/* Senior & Non-Tech Friendly Explainer Callout */}
+          <TouchableOpacity
+            style={styles.explainerHelperBar}
+            onPress={() => setExplainerVisible(true)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.explainerLeft}>
+              <Ionicons name="help-circle-outline" size={19} color="#00F2FE" />
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={styles.explainerHelperTitle}>
+                  What happens at 250Hz, 1kHz, 4kHz & 8kHz?
+                </Text>
+                <Text style={styles.explainerHelperSub}>
+                  Tap to see plain-English explanations & animated speaker guide
+                </Text>
+              </View>
+            </View>
+            <View style={styles.learnPill}>
+              <Text style={styles.learnPillText}>Explain</Text>
+              <Ionicons name="chevron-forward" size={13} color="#00F2FE" />
+            </View>
+          </TouchableOpacity>
+
           {/* Section 1: Frequency Calibration Selection */}
           <Text style={styles.sectionHeading}>Speaker Frequency Sweeps</Text>
           <View style={styles.freqGrid}>
@@ -492,6 +517,13 @@ export function AudioDiagnosticsModal({ visible, onClose }) {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Plain-English Frequency Explainer Modal */}
+        <ExplainerModal
+          visible={explainerVisible}
+          topicKey="audio_frequencies"
+          onClose={() => setExplainerVisible(false)}
+        />
       </SafeAreaView>
     </Modal>
   );
@@ -501,6 +533,48 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#050811',
+  },
+  explainerHelperBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0, 242, 254, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.25)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  explainerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  explainerHelperTitle: {
+    color: '#00F2FE',
+    fontSize: 12.5,
+    fontWeight: '800',
+  },
+  explainerHelperSub: {
+    color: '#94A3B8',
+    fontSize: 11,
+    marginTop: 1,
+  },
+  learnPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 242, 254, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 3,
+  },
+  learnPillText: {
+    color: '#00F2FE',
+    fontSize: 11,
+    fontWeight: '800',
   },
   header: {
     flexDirection: 'row',

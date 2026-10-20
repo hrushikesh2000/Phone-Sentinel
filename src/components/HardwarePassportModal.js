@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
+import { ExplainerModal } from './ExplainerModal';
 import { formatBytes, formatUptime, formatBatteryLevel } from '../utils/formatters';
 
 const screen = Dimensions.get('screen');
@@ -27,6 +28,7 @@ export function HardwarePassportModal({
   networkInfo,
 }) {
   const [copied, setCopied] = useState(false);
+  const [explainerVisible, setExplainerVisible] = useState(false);
 
   // Generate unique deterministic passport ID based on device info
   const passportId = `SN-${(hardware.modelName || 'DEV')
@@ -153,13 +155,24 @@ Generated via Phone Sentinel Inspection Suite`;
             <Ionicons name="shield-checkmark" size={20} color="#F59E0B" />
             <Text style={styles.topBarTitle}>Hardware Inspection Passport</Text>
           </View>
-          <TouchableOpacity
-            style={styles.closeBtn}
-            onPress={onClose}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="close" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setExplainerVisible(true)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="help-circle-outline" size={22} color="#F59E0B" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={onClose}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -252,6 +265,13 @@ Generated via Phone Sentinel Inspection Suite`;
             This passport is cryptographically styled and generated using Phone Sentinel's on-device sensor & telemetry framework.
           </Text>
         </ScrollView>
+
+        {/* Plain-English Passport Explainer */}
+        <ExplainerModal
+          visible={explainerVisible}
+          topicKey="hardware_passport"
+          onClose={() => setExplainerVisible(false)}
+        />
       </SafeAreaView>
     </Modal>
   );

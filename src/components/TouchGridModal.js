@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { ExplainerModal } from './ExplainerModal';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -23,6 +24,7 @@ export function TouchGridModal({ visible, onClose }) {
   const [touchedTiles, setTouchedTiles] = useState(() => new Set());
   const [activeTouches, setActiveTouches] = useState([]);
   const [peakTouches, setPeakTouches] = useState(0);
+  const [explainerVisible, setExplainerVisible] = useState(false);
 
   // Store layout bounds of the grid container for coordinate translation
   const gridLayoutRef = useRef({ x: 0, y: 0, width: SCREEN_WIDTH, height: SCREEN_HEIGHT - 160 });
@@ -189,17 +191,27 @@ export function TouchGridModal({ visible, onClose }) {
             </TouchableOpacity>
           </View>
 
-          {/* Close button */}
-          <TouchableOpacity
-            style={styles.closeBtn}
-            onPress={() => {
-              triggerHaptic('light');
-              onClose();
-            }}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="close" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
+          {/* Actions: Help & Close */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setExplainerVisible(true)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="help-circle-outline" size={22} color="#00F2FE" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => {
+                triggerHaptic('light');
+                onClose();
+              }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Status & Metrics Sub-Bar */}
@@ -338,6 +350,13 @@ export function TouchGridModal({ visible, onClose }) {
             ))}
           </View>
         )}
+
+        {/* Plain-English Touch Explainer */}
+        <ExplainerModal
+          visible={explainerVisible}
+          topicKey="touch_digitizer"
+          onClose={() => setExplainerVisible(false)}
+        />
       </SafeAreaView>
     </Modal>
   );

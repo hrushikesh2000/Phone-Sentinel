@@ -21,6 +21,7 @@ import { TouchGridModal } from '../components/TouchGridModal';
 import { AudioDiagnosticsModal } from '../components/AudioDiagnosticsModal';
 import { HardwarePassportModal } from '../components/HardwarePassportModal';
 import { HealthCheckCard } from '../components/HealthCheckCard';
+import { ExplainerModal } from '../components/ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 
 export function LabScreen({ hardware, batteryData, networkInfo }) {
@@ -31,6 +32,7 @@ export function LabScreen({ hardware, batteryData, networkInfo }) {
   const [audioModalVisible, setAudioModalVisible] = useState(false);
   const [passportModalVisible, setPassportModalVisible] = useState(false);
   const [activeFeedback, setActiveFeedback] = useState(null);
+  const [explainerTopic, setExplainerTopic] = useState(null);
 
   // Screen Geometry
   const screen = Dimensions.get('screen');
@@ -93,6 +95,7 @@ export function LabScreen({ hardware, batteryData, networkInfo }) {
         title="Hardware Inspection Passport"
         subtitle="Used-phone audit certificate & diagnostic ledger"
         badge={<StatBadge label="Grade A+" variant="warning" size="small" />}
+        onHelpPress={() => setExplainerTopic('hardware_passport')}
       >
         <Text style={[styles.explainerText, { color: theme.textSecondary }]}>
           Generate a tamper-evident digital certificate with component test results, hardware serial hashes, and verification scores to share with buyers or sellers.
@@ -248,6 +251,7 @@ export function LabScreen({ hardware, batteryData, networkInfo }) {
         title="Display & Touch Lab"
         subtitle="Dead pixels, OLED burn-in & multi-touch digitizer"
         badge={<StatBadge label="Interactive" variant="primary" size="small" />}
+        onHelpPress={() => setExplainerTopic('touch_digitizer')}
       >
         <Text style={[styles.explainerText, { color: theme.textSecondary }]}>
           Test your display panel for dead pixels and screen uniformity, or verify capacitive touch responsiveness across all grid zones.
@@ -344,6 +348,13 @@ export function LabScreen({ hardware, batteryData, networkInfo }) {
         hardware={hardware}
         batteryData={batteryData}
         networkInfo={networkInfo}
+      />
+
+      {/* Plain-English Accessible Explainer Modal */}
+      <ExplainerModal
+        visible={!!explainerTopic}
+        topicKey={explainerTopic}
+        onClose={() => setExplainerTopic(null)}
       />
     </View>
   );

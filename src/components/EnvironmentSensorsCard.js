@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Magnetometer, LightSensor } from 'expo-sensors';
 import { SectionCard } from './SectionCard';
 import { StatBadge } from './StatBadge';
+import { ExplainerModal } from './ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 
 export function EnvironmentSensorsCard() {
@@ -17,6 +18,9 @@ export function EnvironmentSensorsCard() {
   // Light / Lux Sensor State
   const [luxData, setLuxData] = useState(null);
   const [lightAvailable, setLightAvailable] = useState(true);
+
+  // Plain-English Explainer State
+  const [explainerTopic, setExplainerTopic] = useState(null);
 
   // Setup Magnetometer
   useEffect(() => {
@@ -124,6 +128,7 @@ export function EnvironmentSensorsCard() {
           size="small"
         />
       }
+      onHelpPress={() => setExplainerTopic('sensors_compass_flux')}
     >
       {/* 1. Compass Navigation Dial Hero */}
       <View
@@ -225,6 +230,13 @@ export function EnvironmentSensorsCard() {
             <Text style={[styles.luxTitle, { color: theme.textPrimary }]}>
               Ambient Light Sensor
             </Text>
+            <TouchableOpacity
+              onPress={() => setExplainerTopic('sensors_lux')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ marginLeft: 6 }}
+            >
+              <Ionicons name="help-circle-outline" size={16} color={theme.warning} />
+            </TouchableOpacity>
           </View>
 
           <Text style={[styles.luxValueText, { color: theme.textPrimary }]}>
@@ -260,6 +272,13 @@ export function EnvironmentSensorsCard() {
           <Text style={styles.scaleText}>1000+ lx (Sun)</Text>
         </View>
       </View>
+
+      {/* Plain-English Sensor Explainer */}
+      <ExplainerModal
+        visible={!!explainerTopic}
+        topicKey={explainerTopic}
+        onClose={() => setExplainerTopic(null)}
+      />
     </SectionCard>
   );
 }

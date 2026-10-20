@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SectionCard } from './SectionCard';
 import { InfoRow } from './InfoRow';
 import { StatBadge } from './StatBadge';
+import { ExplainerModal } from './ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 import { formatBytes, formatUptime } from '../utils/formatters';
 
 export function HardwareSpecsCard({ hardware }) {
   const { theme } = useTheme();
+  const [explainerVisible, setExplainerVisible] = useState(false);
 
   const {
     brand,
@@ -46,6 +48,7 @@ export function HardwareSpecsCard({ hardware }) {
       title="Hardware & Specs"
       subtitle="Device identity, memory capacity & processor"
       badge={<StatBadge label="Hardware" variant="primary" size="small" />}
+      onHelpPress={() => setExplainerVisible(true)}
     >
       {/* Device Brand & Model */}
       <InfoRow
@@ -133,6 +136,13 @@ export function HardwareSpecsCard({ hardware }) {
         label="System Uptime"
         value={formatUptime(uptime)}
         isLast
+      />
+
+      {/* Plain-English Memory Explainer */}
+      <ExplainerModal
+        visible={explainerVisible}
+        topicKey="memory_ram_vs_storage"
+        onClose={() => setExplainerVisible(false)}
       />
     </SectionCard>
   );

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SectionCard } from './SectionCard';
 import { StatBadge } from './StatBadge';
+import { ExplainerModal } from './ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 import { estimateBatteryTemperature } from '../utils/batteryThermal';
 
@@ -11,6 +12,7 @@ export function BatteryThermalCard({ batteryData }) {
   const { theme, isDark } = useTheme();
   const [unit, setUnit] = useState('C'); // 'C' or 'F'
   const [simulatedOffset, setSimulatedOffset] = useState(0);
+  const [explainerVisible, setExplainerVisible] = useState(false);
 
   const isCharging = batteryData.batteryState === 2 || batteryData.batteryState === 3;
 
@@ -43,6 +45,7 @@ export function BatteryThermalCard({ batteryData }) {
       title="Battery Temperature"
       subtitle="Operating thermal health & safety spectrum"
       badge={<StatBadge label={thermalData.zone.label} variant={thermalData.zone.variant} size="small" />}
+      onHelpPress={() => setExplainerVisible(true)}
     >
       {/* Hero Temperature Reading Box */}
       <View
@@ -202,6 +205,13 @@ export function BatteryThermalCard({ batteryData }) {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Plain-English Thermal Explainer */}
+      <ExplainerModal
+        visible={explainerVisible}
+        topicKey="battery_thermal"
+        onClose={() => setExplainerVisible(false)}
+      />
     </SectionCard>
   );
 }

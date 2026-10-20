@@ -13,6 +13,7 @@ export function SectionCard({
   accentColor,
   style,
   onPress,
+  onHelpPress,
 }) {
   const { theme } = useTheme();
 
@@ -57,7 +58,27 @@ export function SectionCard({
             )}
           </View>
         </View>
-        {badge}
+
+        <View style={styles.headerRightGroup}>
+          {badge}
+          {onHelpPress && (
+            <TouchableOpacity
+              style={[
+                styles.helpIconButton,
+                { backgroundColor: `${effectiveIconColor}16` },
+              ]}
+              onPress={onHelpPress}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="help-circle-outline"
+                size={18}
+                color={effectiveIconColor}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Card Content Body */}
@@ -86,6 +107,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+  },
+  headerRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  helpIconButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   iconContainer: {
     width: 38,

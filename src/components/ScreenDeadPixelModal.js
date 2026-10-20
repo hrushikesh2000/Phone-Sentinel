@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { ExplainerModal } from './ExplainerModal';
 
 const TEST_COLORS = [
   { name: 'Pure Red', hex: '#FF0000', textLight: true },
@@ -22,6 +23,7 @@ const TEST_COLORS = [
 export function ScreenDeadPixelModal({ visible, onClose }) {
   const [colorIndex, setColorIndex] = useState(0);
   const [showHint, setShowHint] = useState(true);
+  const [explainerVisible, setExplainerVisible] = useState(false);
 
   const currentColor = TEST_COLORS[colorIndex];
 
@@ -61,15 +63,32 @@ export function ScreenDeadPixelModal({ visible, onClose }) {
       >
         {/* Floating Top Controls */}
         <View style={styles.topControlBar}>
-          <View style={styles.colorPill}>
-            <Text
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={styles.colorPill}>
+              <Text
+                style={[
+                  styles.colorPillText,
+                  { color: currentColor.textLight ? '#FFFFFF' : '#000000' },
+                ]}
+              >
+                {currentColor.name} ({colorIndex + 1}/{TEST_COLORS.length})
+              </Text>
+            </View>
+
+            <TouchableOpacity
               style={[
-                styles.colorPillText,
-                { color: currentColor.textLight ? '#FFFFFF' : '#000000' },
+                styles.helpButton,
+                { backgroundColor: currentColor.textLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.7)' },
               ]}
+              onPress={() => setExplainerVisible(true)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              {currentColor.name} ({colorIndex + 1}/{TEST_COLORS.length})
-            </Text>
+              <Ionicons
+                name="help-circle-outline"
+                size={18}
+                color={currentColor.textLight ? '#FFFFFF' : '#000000'}
+              />
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -94,10 +113,27 @@ export function ScreenDeadPixelModal({ visible, onClose }) {
               <Text style={styles.hintText}>
                 Tap anywhere on screen to cycle solid primary colors. Inspect display for stuck, unlit, or discolored pixels.
               </Text>
+
+              <TouchableOpacity
+                style={styles.hintExplainerBtn}
+                onPress={() => setExplainerVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="help-circle" size={15} color="#00F2FE" />
+                <Text style={styles.hintExplainerText}>What is a dead pixel? (Tap to learn)</Text>
+              </TouchableOpacity>
+
               <Text style={styles.hintDismiss}>Tap screen to proceed</Text>
             </View>
           </View>
         )}
+
+        {/* Plain-English Display Explainer */}
+        <ExplainerModal
+          visible={explainerVisible}
+          topicKey="screen_dead_pixels"
+          onClose={() => setExplainerVisible(false)}
+        />
       </TouchableOpacity>
     </Modal>
   );
@@ -168,6 +204,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  helpButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  hintExplainerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 242, 254, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.3)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginBottom: 14,
+    gap: 6,
+  },
+  hintExplainerText: {
+    color: '#00F2FE',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
 

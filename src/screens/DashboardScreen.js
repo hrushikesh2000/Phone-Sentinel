@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { SectionCard } from '../components/SectionCard';
 import { StatBadge } from '../components/StatBadge';
 import { HardwarePassportModal } from '../components/HardwarePassportModal';
+import { ExplainerModal } from '../components/ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 import { formatBytes, formatBatteryLevel, formatUptime } from '../utils/formatters';
 import { estimateBatteryTemperature } from '../utils/batteryThermal';
@@ -18,6 +19,7 @@ export function DashboardScreen({
 }) {
   const { theme, isDark } = useTheme();
   const [passportVisible, setPassportVisible] = useState(false);
+  const [explainerTopic, setExplainerTopic] = useState(null);
 
   const percentage = batteryData.batteryLevel !== null ? Math.round(batteryData.batteryLevel * 100) : 0;
   const isCharging = batteryData.batteryState === 2 || batteryData.batteryState === 3;
@@ -149,6 +151,13 @@ export function DashboardScreen({
               <Ionicons name="hardware-chip-outline" size={16} color={theme.primary} />
             </View>
             <Text style={[styles.matrixBoxLabel, { color: theme.textMuted }]}>MEMORY</Text>
+            <TouchableOpacity
+              onPress={() => setExplainerTopic('memory_ram_vs_storage')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ marginLeft: 'auto' }}
+            >
+              <Ionicons name="help-circle-outline" size={16} color={theme.primary} />
+            </TouchableOpacity>
           </View>
           <Text style={[styles.matrixBoxValue, { color: theme.textPrimary }]}>
             {formatBytes(hardware.totalMemory, 1)}
@@ -197,6 +206,13 @@ export function DashboardScreen({
               />
             </View>
             <Text style={[styles.matrixBoxLabel, { color: theme.textMuted }]}>BATTERY</Text>
+            <TouchableOpacity
+              onPress={() => setExplainerTopic('battery_80_guard')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ marginLeft: 'auto' }}
+            >
+              <Ionicons name="help-circle-outline" size={16} color={theme.success} />
+            </TouchableOpacity>
           </View>
           <Text
             style={[
@@ -262,6 +278,13 @@ export function DashboardScreen({
               <Ionicons name="folder-outline" size={16} color={theme.warning} />
             </View>
             <Text style={[styles.matrixBoxLabel, { color: theme.textMuted }]}>STORAGE</Text>
+            <TouchableOpacity
+              onPress={() => setExplainerTopic('memory_ram_vs_storage')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ marginLeft: 'auto' }}
+            >
+              <Ionicons name="help-circle-outline" size={16} color={theme.warning} />
+            </TouchableOpacity>
           </View>
           <Text style={[styles.matrixBoxValue, { color: theme.textPrimary }]}>
             {hardware.freeStorage ? `${formatBytes(hardware.freeStorage, 0)} Free` : 'Standard'}
@@ -382,6 +405,13 @@ export function DashboardScreen({
         hardware={hardware}
         batteryData={batteryData}
         networkInfo={networkInfo}
+      />
+
+      {/* Plain-English Explainer Modal */}
+      <ExplainerModal
+        visible={!!explainerTopic}
+        topicKey={explainerTopic}
+        onClose={() => setExplainerTopic(null)}
       />
     </View>
   );

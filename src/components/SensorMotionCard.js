@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Accelerometer } from 'expo-sensors';
 import { SectionCard } from './SectionCard';
 import { StatBadge } from './StatBadge';
+import { ExplainerModal } from './ExplainerModal';
 import { useTheme } from '../context/ThemeContext';
 
 export function SensorMotionCard() {
@@ -12,6 +13,7 @@ export function SensorMotionCard() {
   const [data, setData] = useState({ x: 0, y: 0, z: 0 });
   const [isActive, setIsActive] = useState(true);
   const [isAvailable, setIsAvailable] = useState(true);
+  const [explainerVisible, setExplainerVisible] = useState(false);
 
   useEffect(() => {
     let subscription = null;
@@ -62,6 +64,7 @@ export function SensorMotionCard() {
       title="Gravity & Motion Sensor"
       subtitle="3-Axis accelerometer & precision bubble level"
       badge={<StatBadge label={isActive ? 'Live' : 'Paused'} variant={isActive ? 'primary' : 'neutral'} size="small" />}
+      onHelpPress={() => setExplainerVisible(true)}
     >
       <View style={styles.bubbleRow}>
         {/* Real-Time Bubble Level Horizon */}
@@ -156,6 +159,13 @@ export function SensorMotionCard() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Plain-English Accelerometer Explainer */}
+      <ExplainerModal
+        visible={explainerVisible}
+        topicKey="sensors_accelerometer"
+        onClose={() => setExplainerVisible(false)}
+      />
     </SectionCard>
   );
 }
