@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export function HapticVisualFeedback({ feedbackEvent }) {
+  const { theme, isDark } = useTheme();
+
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const barAnim1 = useRef(new Animated.Value(0.2)).current;
   const barAnim2 = useRef(new Animated.Value(0.4)).current;
@@ -50,9 +52,19 @@ export function HapticVisualFeedback({ feedbackEvent }) {
 
   if (!feedbackEvent) {
     return (
-      <View style={styles.idleContainer}>
-        <Ionicons name="radio-outline" size={16} color={COLORS.textMuted} />
-        <Text style={styles.idleText}>Tap any actuator test below to inspect physical feedback</Text>
+      <View
+        style={[
+          styles.idleContainer,
+          {
+            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F1F5F9',
+            borderColor: theme.cardBorder,
+          },
+        ]}
+      >
+        <Ionicons name="radio-outline" size={16} color={theme.textMuted} />
+        <Text style={[styles.idleText, { color: theme.textMuted }]}>
+          Tap any vibration profile below to feel and see actuator response
+        </Text>
       </View>
     );
   }
@@ -63,48 +75,82 @@ export function HapticVisualFeedback({ feedbackEvent }) {
   });
 
   return (
-    <View style={styles.activeContainer}>
+    <View
+      style={[
+        styles.activeContainer,
+        {
+          backgroundColor: theme.primaryLight,
+          borderColor: `${theme.primary}44`,
+        },
+      ]}
+    >
       {/* Expanding Ripple Ring */}
       <View style={styles.rippleOrigin}>
         <Animated.View
           style={[
             styles.rippleRing,
             {
+              borderColor: theme.primary,
+              backgroundColor: theme.primaryLight,
               transform: [{ scale: rippleScale }],
               opacity: pulseAnim,
             },
           ]}
         />
-        <View style={styles.centerIcon}>
-          <Ionicons name="hardware-chip" size={18} color="#00F2FE" />
+        <View style={[styles.centerIcon, { backgroundColor: theme.card }]}>
+          <Ionicons name="hardware-chip" size={18} color={theme.primary} />
         </View>
       </View>
 
       {/* Actuator Status & Waveform */}
       <View style={styles.feedbackInfo}>
         <View style={styles.titleRow}>
-          <Text style={styles.activeLabel}>MOTOR ACTUATOR FIRED</Text>
-          <View style={styles.msBadge}>
-            <Text style={styles.msText}>{feedbackEvent.duration || '40ms'}</Text>
+          <Text style={[styles.activeLabel, { color: theme.primary }]}>VIBRATION CONFIRMED</Text>
+          <View style={[styles.msBadge, { backgroundColor: `${theme.primary}22` }]}>
+            <Text style={[styles.msText, { color: theme.primary }]}>{feedbackEvent.duration || '40ms'}</Text>
           </View>
         </View>
 
-        <Text style={styles.patternName}>{feedbackEvent.name}</Text>
-        <Text style={styles.descText}>{feedbackEvent.description}</Text>
+        <Text style={[styles.patternName, { color: theme.textPrimary }]}>{feedbackEvent.name}</Text>
+        <Text style={[styles.descText, { color: theme.textSecondary }]}>{feedbackEvent.description}</Text>
 
         {/* Live Actuator Waveform Bars */}
         <View style={styles.waveformContainer}>
           <Animated.View
-            style={[styles.waveBar, { height: barAnim1.interpolate({ inputRange: [0, 1], outputRange: [4, 18] }) }]}
+            style={[
+              styles.waveBar,
+              {
+                backgroundColor: theme.secondary,
+                height: barAnim1.interpolate({ inputRange: [0, 1], outputRange: [4, 18] }),
+              },
+            ]}
           />
           <Animated.View
-            style={[styles.waveBar, styles.waveBarAccent, { height: barAnim2.interpolate({ inputRange: [0, 1], outputRange: [6, 26] }) }]}
+            style={[
+              styles.waveBar,
+              {
+                backgroundColor: theme.primary,
+                height: barAnim2.interpolate({ inputRange: [0, 1], outputRange: [6, 26] }),
+              },
+            ]}
           />
           <Animated.View
-            style={[styles.waveBar, { height: barAnim3.interpolate({ inputRange: [0, 1], outputRange: [5, 22] }) }]}
+            style={[
+              styles.waveBar,
+              {
+                backgroundColor: theme.secondary,
+                height: barAnim3.interpolate({ inputRange: [0, 1], outputRange: [5, 22] }),
+              },
+            ]}
           />
           <Animated.View
-            style={[styles.waveBar, styles.waveBarAccent, { height: barAnim4.interpolate({ inputRange: [0, 1], outputRange: [4, 16] }) }]}
+            style={[
+              styles.waveBar,
+              {
+                backgroundColor: theme.primary,
+                height: barAnim4.interpolate({ inputRange: [0, 1], outputRange: [4, 16] }),
+              },
+            ]}
           />
         </View>
       </View>
@@ -117,33 +163,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.4)',
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 14,
   },
   idleText: {
     fontSize: 12,
-    color: COLORS.textMuted,
     marginLeft: 8,
+    fontWeight: '500',
   },
   activeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 242, 254, 0.08)',
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: 'rgba(0, 242, 254, 0.4)',
     padding: 14,
     marginBottom: 14,
-    shadowColor: '#00F2FE',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
   },
   rippleOrigin: {
     width: 44,
@@ -158,16 +195,18 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: '#00F2FE',
-    backgroundColor: 'rgba(0, 242, 254, 0.2)',
   },
   centerIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(15, 23, 42, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   feedbackInfo: {
     flex: 1,
@@ -181,29 +220,26 @@ const styles = StyleSheet.create({
   activeLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#00F2FE',
     letterSpacing: 0.8,
   },
   msBadge: {
-    backgroundColor: 'rgba(0, 242, 254, 0.15)',
     paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 4,
+    paddingVertical: 1.5,
+    borderRadius: 6,
   },
   msText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
-    color: '#00F2FE',
   },
   patternName: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
+    fontSize: 14.5,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
   descText: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    marginTop: 1,
+    fontSize: 11.5,
+    marginTop: 2,
+    lineHeight: 15,
   },
   waveformContainer: {
     flexDirection: 'row',
@@ -213,11 +249,6 @@ const styles = StyleSheet.create({
   },
   waveBar: {
     width: 4,
-    backgroundColor: COLORS.secondary,
     borderRadius: 2,
   },
-  waveBarAccent: {
-    backgroundColor: '#00F2FE',
-  },
 });
-

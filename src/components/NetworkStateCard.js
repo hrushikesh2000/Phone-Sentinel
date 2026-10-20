@@ -5,10 +5,12 @@ import * as Haptics from 'expo-haptics';
 import { SectionCard } from './SectionCard';
 import { InfoRow } from './InfoRow';
 import { StatBadge } from './StatBadge';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../context/ThemeContext';
 import { measureNetworkPing } from '../utils/networkPing';
 
 export function NetworkStateCard({ networkInfo }) {
+  const { theme, isDark } = useTheme();
+
   const {
     ipAddress,
     connectionType,
@@ -33,20 +35,20 @@ export function NetworkStateCard({ networkInfo }) {
 
   // Determine appropriate icon based on network type
   let networkIcon = 'wifi-outline';
-  let typeColor = COLORS.secondary;
+  let typeColor = theme.secondary;
   const upperType = (connectionType || '').toUpperCase();
 
   if (upperType === 'CELLULAR') {
     networkIcon = 'cellular-outline';
-    typeColor = COLORS.accent;
+    typeColor = theme.accent;
   } else if (upperType === 'WIFI') {
     networkIcon = 'wifi-outline';
-    typeColor = COLORS.primary;
+    typeColor = theme.primary;
   } else if (upperType === 'ETHERNET') {
     networkIcon = 'git-network-outline';
   } else if (!isConnected || upperType === 'NONE') {
     networkIcon = 'cloud-offline-outline';
-    typeColor = COLORS.danger;
+    typeColor = theme.danger;
   }
 
   return (
@@ -54,26 +56,33 @@ export function NetworkStateCard({ networkInfo }) {
       icon={networkIcon}
       iconColor={typeColor}
       title="Network & Connectivity"
-      subtitle="Interface IP, gateway health & ping latency"
-      accentColor={COLORS.secondary}
-      badge={<StatBadge label="NETWORK" variant="info" size="small" />}
+      subtitle="Interface IP, internet gateway & latency"
+      badge={<StatBadge label="Network" variant="info" size="small" />}
     >
       {/* Network Type Hero Highlight */}
-      <View style={styles.heroRow}>
+      <View
+        style={[
+          styles.heroRow,
+          {
+            backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9',
+            borderColor: theme.cardBorder,
+          },
+        ]}
+      >
         <View style={styles.heroLeft}>
-          <View style={[styles.heroIconBadge, { backgroundColor: `${typeColor}20` }]}>
-            <Ionicons name={networkIcon} size={24} color={typeColor} />
+          <View style={[styles.heroIconBadge, { backgroundColor: `${typeColor}18` }]}>
+            <Ionicons name={networkIcon} size={22} color={typeColor} />
           </View>
           <View>
-            <Text style={styles.heroLabel}>Active Interface</Text>
-            <Text style={[styles.heroValue, { color: typeColor }]}>
+            <Text style={[styles.heroLabel, { color: theme.textMuted }]}>Active Interface</Text>
+            <Text style={[styles.heroValue, { color: theme.textPrimary }]}>
               {connectionType ? connectionType.toUpperCase() : 'UNKNOWN'}
             </Text>
           </View>
         </View>
 
         <StatBadge
-          label={isConnected ? 'CONNECTED' : 'DISCONNECTED'}
+          label={isConnected ? 'Connected' : 'Offline'}
           variant={isConnected ? 'success' : 'danger'}
           size="small"
         />
@@ -89,11 +98,11 @@ export function NetworkStateCard({ networkInfo }) {
 
       {/* Internet Reachability */}
       <InfoRow
-        label="Gateway Status"
-        value={isInternetReachable ? 'Internet Reachable' : isConnected ? 'Local Link Only' : 'Offline'}
+        label="Internet Gateway"
+        value={isInternetReachable ? 'Verified & Online' : isConnected ? 'Local Link Only' : 'Offline'}
         badge={
           <StatBadge
-            label={isInternetReachable ? 'ONLINE' : 'UNREACHABLE'}
+            label={isInternetReachable ? 'Online' : 'Limited'}
             variant={isInternetReachable ? 'success' : 'warning'}
             size="small"
           />
@@ -106,7 +115,7 @@ export function NetworkStateCard({ networkInfo }) {
         value={isAirplaneMode ? 'Enabled' : 'Disabled'}
         badge={
           <StatBadge
-            label={isAirplaneMode ? 'ACTIVE' : 'OFF'}
+            label={isAirplaneMode ? 'Active' : 'Off'}
             variant={isAirplaneMode ? 'warning' : 'neutral'}
             size="small"
           />
@@ -114,34 +123,52 @@ export function NetworkStateCard({ networkInfo }) {
       />
 
       {/* Live Ping & Latency Tester */}
-      <View style={styles.pingBox}>
+      <View
+        style={[
+          styles.pingBox,
+          {
+            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+            borderColor: theme.cardBorder,
+          },
+        ]}
+      >
         <View style={styles.pingHeader}>
           <View style={styles.pingTitleRow}>
-            <Ionicons name="pulse" size={17} color={COLORS.primary} />
-            <Text style={styles.pingTitle}>Gateway Latency (Ping)</Text>
+            <Ionicons name="pulse" size={17} color={theme.primary} />
+            <Text style={[styles.pingTitle, { color: theme.textPrimary }]}>Gateway Latency (Ping)</Text>
           </View>
 
           <TouchableOpacity
-            style={styles.pingTestBtn}
+            style={[
+              styles.pingTestBtn,
+              {
+                backgroundColor: theme.primaryLight,
+                borderColor: `${theme.primary}44`,
+              },
+            ]}
             onPress={handleTestPing}
             disabled={isTestingPing || !isConnected}
             activeOpacity={0.7}
           >
             {isTestingPing ? (
-              <ActivityIndicator size="small" color={COLORS.primary} />
+              <ActivityIndicator size="small" color={theme.primary} />
             ) : (
-              <Text style={styles.pingBtnText}>
-                {pingResult ? 'Re-Ping' : 'Test Ping'}
+              <Text style={[styles.pingBtnText, { color: theme.primary }]}>
+                {pingResult ? 'Re-Test' : 'Test Latency'}
               </Text>
             )}
           </TouchableOpacity>
         </View>
 
         {pingResult ? (
-          <View style={styles.pingResultRow}>
+          <View style={[styles.pingResultRow, { borderTopColor: theme.divider }]}>
             <View style={styles.pingMetric}>
-              <Text style={styles.pingNumber}>{pingResult.latencyMs} ms</Text>
-              <Text style={styles.pingSub}>Roundtrip Latency</Text>
+              <Text style={[styles.pingNumber, { color: theme.textPrimary }]}>
+                {pingResult.latencyMs} ms
+              </Text>
+              <Text style={[styles.pingSub, { color: theme.textSecondary }]}>
+                Roundtrip Response Time
+              </Text>
             </View>
             <StatBadge
               label={pingResult.grade}
@@ -150,10 +177,10 @@ export function NetworkStateCard({ networkInfo }) {
             />
           </View>
         ) : (
-          <Text style={styles.pingPrompt}>
+          <Text style={[styles.pingPrompt, { color: theme.textMuted }]}>
             {isConnected
-              ? 'Tap "Test Ping" to measure roundtrip latency to DNS gateway.'
-              : 'Network offline. Connect to Wi-Fi or Cellular to test ping.'}
+              ? 'Tap "Test Latency" to measure live roundtrip ping to Google/Cloudflare DNS.'
+              : 'Network offline. Connect to Wi-Fi or Cellular to test latency.'}
           </Text>
         )}
       </View>
@@ -166,20 +193,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(30, 41, 59, 0.5)',
-    padding: 12,
-    borderRadius: 14,
+    padding: 13,
+    borderRadius: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.4)',
   },
   heroLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   heroIconBadge: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -187,24 +212,20 @@ const styles = StyleSheet.create({
   },
   heroLabel: {
     fontSize: 11,
-    color: COLORS.textMuted,
     fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
   heroValue: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
     marginTop: 1,
-    letterSpacing: 0.3,
+    letterSpacing: -0.2,
   },
   pingBox: {
     marginTop: 12,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.4)',
   },
   pingHeader: {
     flexDirection: 'row',
@@ -216,23 +237,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pingTitle: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginLeft: 6,
+    marginLeft: 7,
   },
   pingTestBtn: {
-    backgroundColor: 'rgba(0, 242, 254, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.3)',
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingVertical: 6,
   },
   pingBtnText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
-    color: COLORS.primary,
   },
   pingResultRow: {
     flexDirection: 'row',
@@ -241,24 +258,22 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(51, 65, 85, 0.3)',
   },
   pingMetric: {
     flex: 1,
   },
   pingNumber: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: COLORS.textPrimary,
+    fontSize: 19,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   pingSub: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginTop: 2,
+    fontSize: 11.5,
+    marginTop: 1,
+    fontWeight: '500',
   },
   pingPrompt: {
-    fontSize: 11,
-    color: COLORS.textMuted,
+    fontSize: 11.5,
     marginTop: 8,
     lineHeight: 16,
   },

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export function InfoRow({
   label,
@@ -10,16 +10,19 @@ export function InfoRow({
   isLast = false,
   highlight = false,
 }) {
+  const { theme } = useTheme();
+
   return (
-    <View style={[styles.container, !isLast && styles.borderBottom]}>
+    <View style={[styles.container, !isLast && { borderBottomWidth: 1, borderBottomColor: theme.divider }]}>
       <View style={styles.labelColumn}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
       </View>
       <View style={styles.valueColumn}>
         {value !== undefined && (
           <Text
             style={[
               styles.value,
+              { color: highlight ? theme.primary : theme.textPrimary },
               highlight && styles.highlightText,
             ]}
             numberOfLines={2}
@@ -27,7 +30,7 @@ export function InfoRow({
             {value}
           </Text>
         )}
-        {subvalue && <Text style={styles.subvalue}>{subvalue}</Text>}
+        {subvalue && <Text style={[styles.subvalue, { color: theme.textMuted }]}>{subvalue}</Text>}
         {badge}
       </View>
     </View>
@@ -39,41 +42,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 11,
-  },
-  borderBottom: {
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(51, 65, 85, 0.35)',
+    paddingVertical: 12,
   },
   labelColumn: {
     flex: 1,
-    paddingRight: 8,
+    paddingRight: 10,
   },
   label: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     fontWeight: '500',
+    letterSpacing: -0.1,
   },
   valueColumn: {
-    flex: 1.3,
+    flex: 1.4,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
   value: {
     fontSize: 14,
-    color: COLORS.textPrimary,
     fontWeight: '600',
     textAlign: 'right',
+    letterSpacing: -0.1,
   },
   highlightText: {
-    color: COLORS.primary,
     fontWeight: '700',
   },
   subvalue: {
     fontSize: 11,
-    color: COLORS.textMuted,
     marginTop: 2,
     textAlign: 'right',
   },
 });
-

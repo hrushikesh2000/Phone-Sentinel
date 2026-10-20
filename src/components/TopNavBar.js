@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../context/ThemeContext';
 import { formatBatteryLevel } from '../utils/formatters';
 
 export function TopNavBar({
@@ -12,57 +12,127 @@ export function TopNavBar({
   isCharging,
   onCopyReport,
 }) {
+  const { theme, isDark, toggleTheme } = useTheme();
+
+  // Spin animation for refresh button
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isRefreshing) {
+      Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      spinAnim.stopAnimation();
+      spinAnim.setValue(0);
+    }
+  }, [isRefreshing, spinAnim]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
-    <View style={styles.headerContainer}>
+    <View style={[styles.headerContainer, { backgroundColor: theme.background, borderBottomColor: theme.divider }]}>
       <View style={styles.topRow}>
         {/* Brand & Model Column */}
         <View style={styles.brandColumn}>
-          <View style={styles.liveBadgeRow}>
-            <View style={styles.pulseDot} />
-            <Text style={styles.sentinelLabel}>DEVICE SENTINEL</Text>
+          <View style={styles.badgeRow}>
+            <View style={[styles.pulseDot, { backgroundColor: theme.primary }]} />
+            <Text style={[styles.brandLabel, { color: theme.primary }]}>DEVICE SENTINEL</Text>
           </View>
-          <Text style={styles.modelTitle} numberOfLines={1}>
-            {hardwareModel || 'Hardware Diagnostics'}
+          <Text style={[styles.modelTitle, { color: theme.textPrimary }]} numberOfLines={1}>
+            {hardwareModel || 'Phone Status'}
           </Text>
         </View>
 
         {/* Right Action Buttons */}
         <View style={styles.rightGroup}>
           {batteryLevel !== null && (
-            <View style={[styles.miniBatteryPill, isCharging && styles.miniBatteryPillCharging]}>
+            <View
+              style={[
+                styles.miniBatteryPill,
+                {
+                  backgroundColor: isCharging ? theme.primaryLight : theme.pillBg,
+                  borderColor: isCharging ? `${theme.primary}44` : theme.cardBorder,
+                },
+              ]}
+            >
               <Ionicons
                 name={isCharging ? 'flash' : 'battery-charging'}
                 size={12}
-                color={isCharging ? COLORS.primary : COLORS.textPrimary}
+                color={isCharging ? theme.primary : theme.textSecondary}
               />
-              <Text style={styles.miniBatteryText}>
+              <Text
+                style={[
+                  styles.miniBatteryText,
+                  { color: isCharging ? theme.primary : theme.textPrimary },
+                ]}
+              >
                 {formatBatteryLevel(batteryLevel)}
               </Text>
             </View>
           )}
 
+          {/* Theme Switcher Toggle (Light ☀️ / Dark 🌙) */}
           <TouchableOpacity
-            style={styles.actionBtn}
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+              },
+            ]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name={isDark ? 'sunny-outline' : 'moon-outline'}
+              size={18}
+              color={isDark ? '#FBBF24' : '#6366F1'}
+            />
+          </TouchableOpacity>
+
+          {/* Copy Report */}
+          <TouchableOpacity
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+              },
+            ]}
             onPress={onCopyReport}
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="document-text-outline" size={17} color={COLORS.primary} />
+            <Ionicons name="share-outline" size={17} color={theme.textPrimary} />
           </TouchableOpacity>
 
+          {/* Refresh Action */}
           <TouchableOpacity
-            style={[styles.actionBtn, isRefreshing && styles.refreshingActionBtn]}
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+              },
+              isRefreshing && { opacity: 0.6 },
+            ]}
             onPress={onRefresh}
             disabled={isRefreshing}
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons
-              name="refresh"
-              size={17}
-              color={COLORS.textPrimary}
-              style={isRefreshing ? styles.spinIcon : null}
-            />
+            <Animated.View style={{ transform: [{ rotate: spin }] }}>
+              <Ionicons name="refresh" size={17} color={theme.textPrimary} />
+            </Animated.View>
           </TouchableOpacity>
         </View>
       </View>
@@ -72,12 +142,10 @@ export function TopNavBar({
 
 const styles = StyleSheet.create({
   headerContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 10,
-    backgroundColor: COLORS.background,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(30, 47, 77, 0.4)',
   },
   topRow: {
     flexDirection: 'row',
@@ -86,35 +154,28 @@ const styles = StyleSheet.create({
   },
   brandColumn: {
     flex: 1,
-    paddingRight: 12,
+    paddingRight: 10,
   },
-  liveBadgeRow: {
+  badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 3,
   },
   pulseDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: COLORS.primary,
     marginRight: 6,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 4,
   },
-  sentinelLabel: {
-    fontSize: 9,
+  brandLabel: {
+    fontSize: 9.5,
     fontWeight: '800',
-    color: COLORS.primary,
-    letterSpacing: 1.2,
+    letterSpacing: 1.1,
   },
   modelTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: COLORS.textPrimary,
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   rightGroup: {
     flexDirection: 'row',
@@ -124,37 +185,22 @@ const styles = StyleSheet.create({
   miniBatteryPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(30, 41, 59, 0.6)',
-    paddingHorizontal: 8,
+    paddingHorizontal: 9,
     paddingVertical: 5,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.5)',
-  },
-  miniBatteryPillCharging: {
-    backgroundColor: 'rgba(0, 242, 254, 0.12)',
-    borderColor: 'rgba(0, 242, 254, 0.3)',
   },
   miniBatteryText: {
     fontSize: 11,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginLeft: 4,
   },
   actionBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(16, 27, 46, 0.8)',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  refreshingActionBtn: {
-    opacity: 0.5,
-  },
-  spinIcon: {
-    transform: [{ rotate: '45deg' }],
   },
 });

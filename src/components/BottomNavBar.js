@@ -2,17 +2,19 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export const TABS = [
-  { id: 'overview', label: 'Overview', icon: 'speedometer-outline', activeIcon: 'speedometer' },
+  { id: 'overview', label: 'Home', icon: 'sparkles-outline', activeIcon: 'sparkles' },
   { id: 'battery', label: 'Battery', icon: 'battery-charging-outline', activeIcon: 'battery-charging' },
   { id: 'network', label: 'Network', icon: 'wifi-outline', activeIcon: 'wifi' },
-  { id: 'hardware', label: 'Hardware', icon: 'hardware-chip-outline', activeIcon: 'hardware-chip' },
-  { id: 'lab', label: 'Lab & Audit', icon: 'flask-outline', activeIcon: 'flask' },
+  { id: 'hardware', label: 'Specs', icon: 'hardware-chip-outline', activeIcon: 'hardware-chip' },
+  { id: 'lab', label: 'Lab', icon: 'flask-outline', activeIcon: 'flask' },
 ];
 
 export function BottomNavBar({ activeTab, onSelectTab }) {
+  const { theme, isDark } = useTheme();
+
   const handlePress = (tabId) => {
     try {
       Haptics.selectionAsync();
@@ -22,13 +24,27 @@ export function BottomNavBar({ activeTab, onSelectTab }) {
 
   return (
     <View style={styles.dockWrapper}>
-      <View style={styles.dockContainer}>
+      <View
+        style={[
+          styles.dockContainer,
+          {
+            backgroundColor: theme.dockBg,
+            borderColor: theme.dockBorder,
+          },
+          theme.cardShadow,
+        ]}
+      >
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <TouchableOpacity
               key={tab.id}
-              style={[styles.tabButton, isActive && styles.tabButtonActive]}
+              style={[
+                styles.tabButton,
+                isActive && {
+                  backgroundColor: theme.primaryLight,
+                },
+              ]}
               onPress={() => handlePress(tab.id)}
               activeOpacity={0.7}
             >
@@ -36,11 +52,29 @@ export function BottomNavBar({ activeTab, onSelectTab }) {
                 <Ionicons
                   name={isActive ? tab.activeIcon : tab.icon}
                   size={20}
-                  color={isActive ? COLORS.primary : COLORS.textMuted}
+                  color={isActive ? theme.primary : theme.textMuted}
                 />
-                {isActive && <View style={styles.activeGlowDot} />}
+                {isActive && (
+                  <View
+                    style={[
+                      styles.activeGlowDot,
+                      {
+                        backgroundColor: theme.primary,
+                        shadowColor: theme.primary,
+                      },
+                    ]}
+                  />
+                )}
               </View>
-              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+              <Text
+                style={[
+                  styles.tabLabel,
+                  {
+                    color: isActive ? theme.primary : theme.textMuted,
+                    fontWeight: isActive ? '800' : '500',
+                  },
+                ]}
+              >
                 {tab.label}
               </Text>
             </TouchableOpacity>
@@ -53,34 +87,24 @@ export function BottomNavBar({ activeTab, onSelectTab }) {
 
 const styles = StyleSheet.create({
   dockWrapper: {
-    paddingHorizontal: 14,
-    paddingBottom: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     backgroundColor: 'transparent',
   },
   dockContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: 'rgba(13, 20, 36, 0.94)',
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.25)',
     paddingVertical: 8,
     paddingHorizontal: 6,
-    shadowColor: '#00F2FE',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 14,
-    elevation: 10,
   },
   tabButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 5,
-    borderRadius: 14,
-  },
-  tabButtonActive: {
-    backgroundColor: 'rgba(0, 242, 254, 0.1)',
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   iconContainer: {
     position: 'relative',
@@ -93,21 +117,13 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: COLORS.primary,
-    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.9,
     shadowRadius: 4,
   },
   tabLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: COLORS.textMuted,
+    fontSize: 11,
     marginTop: 2,
-  },
-  tabLabelActive: {
-    color: COLORS.primary,
-    fontWeight: '800',
+    letterSpacing: -0.1,
   },
 });
-

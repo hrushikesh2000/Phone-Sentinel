@@ -8,12 +8,13 @@ import {
   Text,
   Platform,
   StatusBar as NativeStatusBar,
+  TouchableOpacity,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 
-// Theme Constants
-import { COLORS } from './src/styles/theme';
+// Theme Context & Provider
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 
 // Custom Hooks for Live Hardware Telemetry
 import { useDeviceHardware } from './src/hooks/useDeviceHardware';
@@ -25,6 +26,7 @@ import { TopNavBar } from './src/components/TopNavBar';
 import { BottomNavBar } from './src/components/BottomNavBar';
 import { AnimatedViewTransition } from './src/components/AnimatedViewTransition';
 import { ToastNotification } from './src/components/ToastNotification';
+import { PrivacyComplianceModal } from './src/components/PrivacyComplianceModal';
 
 // Modular Screen Views
 import { DashboardScreen } from './src/screens/DashboardScreen';
@@ -36,16 +38,14 @@ import { LabScreen } from './src/screens/LabScreen';
 // Utilities
 import { copyDiagnosticReport } from './src/utils/reportGenerator';
 
-/**
- * Device Sentinel — Hardware Diagnostics & Telemetry
- * Modern Obsidian/Cyberpunk Dark Mode with Bottom Dock Navigation,
- * Battery Temperature Analysis, and Haptic Visual Waveform Monitor.
- */
-export default function App() {
+function MainApp() {
+  const { theme, isDark } = useTheme();
+
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshing, setRefreshing] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [privacyModalVisible, setPrivacyModalVisible] = useState(false);
 
   // 1. Hardware specifications hook
   const hardware = useDeviceHardware();
@@ -80,7 +80,7 @@ export default function App() {
       batteryData,
     });
     if (success) {
-      setToastMessage('Technical Report Copied to Clipboard!');
+      setToastMessage('Technical Specs Copied to Clipboard ✨');
       setToastVisible(true);
     }
   };
@@ -119,10 +119,10 @@ export default function App() {
   const isCharging = batteryData.batteryState === 2 || batteryData.batteryState === 3;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="light" backgroundColor={COLORS.background} />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <StatusBar style={theme.statusBar} backgroundColor={theme.background} />
 
-      {/* Modern Top Header with Brand, Model & Direct Actions */}
+      {/* Modern Top Header with Brand, Model & Theme Switcher */}
       <TopNavBar
         hardwareModel={hardware.modelName}
         onRefresh={onRefresh}
@@ -134,16 +134,16 @@ export default function App() {
 
       {/* Main Scrollable Canvas */}
       <ScrollView
-        style={styles.scrollView}
+        style={[styles.scrollView, { backgroundColor: theme.background }]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary, COLORS.secondary]}
-            progressBackgroundColor={COLORS.card}
+            tintColor={theme.primary}
+            colors={[theme.primary, theme.secondary]}
+            progressBackgroundColor={theme.card}
           />
         }
       >
@@ -153,18 +153,35 @@ export default function App() {
         </AnimatedViewTransition>
 
         {/* Global Footer */}
-        <View style={styles.footer}>
-          <View style={styles.footerBadgeRow}>
-            <Ionicons name="shield-checkmark" size={13} color={COLORS.accent} />
-            <Text style={styles.footerBadgeText}>DEVICE SENTINEL TELEMETRY</Text>
-          </View>
-          <Text style={styles.footerText}>
-            Privacy-Compliant Hardware Metrics • Expo Go Sandboxed
-          </Text>
+        <View style={[styles.footer, { borderTopColor: theme.divider }]}>
+          <TouchableOpacity
+            style={[
+              styles.footerBadgeRow,
+              {
+                backgroundColor: theme.primaryLight,
+                borderColor: `${theme.primary}33`,
+              },
+            ]}
+            onPress={() => setPrivacyModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="shield-checkmark" size={13} color={theme.primary} />
+            <Text style={[styles.footerBadgeText, { color: theme.primary }]}>
+              PRIVACY & DATA SAFETY
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setPrivacyModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.footerText, { color: theme.textMuted }]}>
+              100% On-Device Diagnostics • DPDP Act & Google Play Compliant
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* Ergonomic Floating Bottom Navigation Dock (Replacing Drawer) */}
+      {/* Ergonomic Floating Bottom Navigation Dock */}
       <BottomNavBar
         activeTab={activeTab}
         onSelectTab={(tabId) => setActiveTab(tabId)}
@@ -176,19 +193,107 @@ export default function App() {
         message={toastMessage}
         onHide={() => setToastVisible(false)}
       />
+
+      {/* In-App Privacy & DPDP Compliance Modal */}
+      <PrivacyComplianceModal
+        visible={privacyModalVisible}
+        onClose={() => setPrivacyModalVisible(false)}
+      />
     </SafeAreaView>
+  );
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.warn('Diagnostics ErrorBoundary caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <SafeAreaView
+          style={{
+            flex: 1,
+            backgroundColor: '#070B14',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+          }}
+        >
+          <Ionicons
+            name="warning-outline"
+            size={48}
+            color="#EF4444"
+            style={{ marginBottom: 16 }}
+          />
+          <Text
+            style={{
+              color: '#F8FAFC',
+              fontSize: 18,
+              fontWeight: '800',
+              marginBottom: 8,
+              textAlign: 'center',
+            }}
+          >
+            Diagnostics Notice
+          </Text>
+          <Text
+            style={{
+              color: '#94A3B8',
+              fontSize: 13,
+              textAlign: 'center',
+              marginBottom: 20,
+              lineHeight: 18,
+            }}
+          >
+            {this.state.error?.message || 'A module encountered an unexpected condition.'}
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: '#00F2FE',
+              paddingVertical: 12,
+              paddingHorizontal: 24,
+              borderRadius: 12,
+            }}
+            onPress={() => this.setState({ hasError: false, error: null })}
+          >
+            <Text style={{ color: '#070B14', fontWeight: '800', fontSize: 14 }}>
+              Reload Diagnostics
+            </Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <ErrorBoundary>
+        <MainApp />
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
     paddingTop: Platform.OS === 'android' ? NativeStatusBar.currentHeight || 24 : 0,
   },
   scrollView: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -199,31 +304,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 18,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(30, 47, 77, 0.4)',
-    marginTop: 10,
+    marginTop: 8,
   },
   footerBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(20, 184, 166, 0.12)',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingVertical: 4.5,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(20, 184, 166, 0.25)',
     marginBottom: 6,
   },
   footerBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: COLORS.accent,
     marginLeft: 5,
     letterSpacing: 0.8,
   },
   footerText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.textMuted,
+    fontWeight: '500',
     textAlign: 'center',
   },
 });

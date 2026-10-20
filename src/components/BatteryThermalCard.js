@@ -4,10 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SectionCard } from './SectionCard';
 import { StatBadge } from './StatBadge';
-import { COLORS } from '../styles/theme';
-import { estimateBatteryTemperature, THERMAL_ZONES } from '../utils/batteryThermal';
+import { useTheme } from '../context/ThemeContext';
+import { estimateBatteryTemperature } from '../utils/batteryThermal';
 
 export function BatteryThermalCard({ batteryData }) {
+  const { theme, isDark } = useTheme();
   const [unit, setUnit] = useState('C'); // 'C' or 'F'
   const [simulatedOffset, setSimulatedOffset] = useState(0);
 
@@ -39,29 +40,50 @@ export function BatteryThermalCard({ batteryData }) {
     <SectionCard
       icon="thermometer-outline"
       iconColor={thermalData.zone.color}
-      title="Battery Thermal Analysis"
-      subtitle="Operating temperature & lithium chemistry safety"
-      accentColor={thermalData.zone.color}
+      title="Battery Temperature"
+      subtitle="Operating thermal health & safety spectrum"
       badge={<StatBadge label={thermalData.zone.label} variant={thermalData.zone.variant} size="small" />}
     >
       {/* Hero Temperature Reading Box */}
-      <View style={styles.heroRow}>
+      <View
+        style={[
+          styles.heroRow,
+          {
+            backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9',
+            borderColor: theme.cardBorder,
+          },
+        ]}
+      >
         <View style={styles.tempColumn}>
-          <Text style={styles.tempSubLabel}>ESTIMATED BATTERY CORE</Text>
+          <Text style={[styles.tempSubLabel, { color: theme.textMuted }]}>
+            BATTERY CORE TEMPERATURE
+          </Text>
           <View style={styles.tempValueRow}>
             <Text style={[styles.tempNumber, { color: thermalData.zone.color }]}>
               {currentDisplayTemp}
             </Text>
-            <TouchableOpacity style={styles.unitToggleBtn} onPress={toggleUnit} activeOpacity={0.7}>
-              <Text style={styles.unitToggleText}>{unit === 'C' ? 'Switch to °F' : 'Switch to °C'}</Text>
+            <TouchableOpacity
+              style={[
+                styles.unitToggleBtn,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.cardBorder,
+                },
+              ]}
+              onPress={toggleUnit}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.unitToggleText, { color: theme.primary }]}>
+                {unit === 'C' ? 'View in °F' : 'View in °C'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={[styles.zoneIconBox, { backgroundColor: `${thermalData.zone.color}20` }]}>
+        <View style={[styles.zoneIconBox, { backgroundColor: `${thermalData.zone.color}18` }]}>
           <Ionicons
             name={thermalData.isOverheating ? 'flame' : 'thermometer'}
-            size={28}
+            size={26}
             color={thermalData.zone.color}
           />
         </View>
@@ -70,13 +92,13 @@ export function BatteryThermalCard({ batteryData }) {
       {/* Visual Thermal Spectrum Track */}
       <View style={styles.spectrumContainer}>
         <View style={styles.spectrumHeader}>
-          <Text style={styles.spectrumMark}>20°C (Cold)</Text>
-          <Text style={styles.spectrumMark}>35°C (Ideal)</Text>
-          <Text style={styles.spectrumMark}>50°C (Hot)</Text>
+          <Text style={[styles.spectrumMark, { color: theme.textMuted }]}>20°C (Cool ❄️)</Text>
+          <Text style={[styles.spectrumMark, { color: theme.textMuted }]}>35°C (Optimal 🌿)</Text>
+          <Text style={[styles.spectrumMark, { color: theme.textMuted }]}>50°C (Hot 🔥)</Text>
         </View>
 
-        <View style={styles.spectrumTrack}>
-          {/* Gradient-like zones */}
+        <View style={[styles.spectrumTrack, { backgroundColor: theme.trackBg }]}>
+          {/* Friendly colored thermal zones */}
           <View style={[styles.zoneSection, { backgroundColor: '#38BDF8', flex: 1.5 }]} />
           <View style={[styles.zoneSection, { backgroundColor: '#10B981', flex: 2 }]} />
           <View style={[styles.zoneSection, { backgroundColor: '#F59E0B', flex: 2 }]} />
@@ -89,6 +111,7 @@ export function BatteryThermalCard({ batteryData }) {
               {
                 left: `${pointerPercent}%`,
                 borderColor: thermalData.zone.color,
+                backgroundColor: theme.card,
               },
             ]}
           />
@@ -96,7 +119,15 @@ export function BatteryThermalCard({ batteryData }) {
       </View>
 
       {/* Contextual Thermal Health Advice */}
-      <View style={styles.adviceCard}>
+      <View
+        style={[
+          styles.adviceCard,
+          {
+            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+            borderColor: theme.cardBorder,
+          },
+        ]}
+      >
         <Ionicons
           name="information-circle-outline"
           size={18}
@@ -104,53 +135,70 @@ export function BatteryThermalCard({ batteryData }) {
           style={styles.adviceIcon}
         />
         <View style={styles.adviceContent}>
-          <Text style={styles.adviceTitle}>Thermal Chemistry Impact</Text>
-          <Text style={styles.adviceText}>{thermalData.zone.advice}</Text>
+          <Text style={[styles.adviceTitle, { color: theme.textPrimary }]}>
+            Battery Chemistry Health
+          </Text>
+          <Text style={[styles.adviceText, { color: theme.textSecondary }]}>
+            {thermalData.zone.advice}
+          </Text>
         </View>
       </View>
 
-      {/* Thermal Decomposition Factors */}
-      <View style={styles.factorsRow}>
+      {/* Thermal Factors */}
+      <View
+        style={[
+          styles.factorsRow,
+          {
+            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F1F5F9',
+          },
+        ]}
+      >
         <View style={styles.factorItem}>
-          <Text style={styles.factorLabel}>Charging Thermal</Text>
-          <Text style={styles.factorValue}>
-            {isCharging ? '+5.5°C' : '0.0°C (Off)'}
+          <Text style={[styles.factorLabel, { color: theme.textMuted }]}>Charging Heat</Text>
+          <Text style={[styles.factorValue, { color: theme.textPrimary }]}>
+            {isCharging ? '+5.5°C' : '0.0°C (Normal)'}
           </Text>
         </View>
 
-        <View style={styles.factorDivider} />
+        <View style={[styles.factorDivider, { backgroundColor: theme.divider }]} />
 
         <View style={styles.factorItem}>
-          <Text style={styles.factorLabel}>Discharge Heat</Text>
-          <Text style={styles.factorValue}>
+          <Text style={[styles.factorLabel, { color: theme.textMuted }]}>Discharge Load</Text>
+          <Text style={[styles.factorValue, { color: theme.textPrimary }]}>
             {batteryData.drainRatePerHour && batteryData.drainRatePerHour > 18 ? '+4.2°C (High)' : '+1.2°C (Low)'}
           </Text>
         </View>
 
-        <View style={styles.factorDivider} />
+        <View style={[styles.factorDivider, { backgroundColor: theme.divider }]} />
 
         <View style={styles.factorItem}>
-          <Text style={styles.factorLabel}>Thermal Throttle</Text>
-          <Text style={[styles.factorValue, thermalData.isOverheating && { color: COLORS.danger }]}>
+          <Text style={[styles.factorLabel, { color: theme.textMuted }]}>Thermal Throttle</Text>
+          <Text style={[styles.factorValue, { color: thermalData.isOverheating ? theme.danger : theme.success }]}>
             {thermalData.isOverheating ? 'Active Risk' : 'None'}
           </Text>
         </View>
       </View>
 
-      {/* Interactive Simulation Controls */}
+      {/* Simulation Controls */}
       <View style={styles.simControlsRow}>
         <TouchableOpacity
-          style={styles.simBtn}
+          style={[
+            styles.simBtn,
+            {
+              backgroundColor: theme.primaryLight,
+              borderColor: `${theme.primary}44`,
+            },
+          ]}
           onPress={() => setSimulatedOffset((prev) => (prev === 0 ? 12 : 0))}
           activeOpacity={0.7}
         >
           <Ionicons
             name={simulatedOffset > 0 ? 'refresh-outline' : 'flame-outline'}
             size={14}
-            color={COLORS.primary}
+            color={theme.primary}
           />
-          <Text style={styles.simBtnText}>
-            {simulatedOffset > 0 ? 'Reset Thermal State' : 'Simulate Heavy 3D Gaming Heat (+12°C)'}
+          <Text style={[styles.simBtnText, { color: theme.primary }]}>
+            {simulatedOffset > 0 ? 'Reset Thermal Model' : 'Simulate Heavy 3D Gaming Heat (+12°C)'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -163,12 +211,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(30, 41, 59, 0.4)',
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.4)',
   },
   tempColumn: {
     flex: 1,
@@ -176,41 +222,38 @@ const styles = StyleSheet.create({
   tempSubLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: COLORS.textMuted,
     letterSpacing: 0.8,
   },
   tempValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: 3,
   },
   tempNumber: {
     fontSize: 26,
-    fontWeight: '900',
-    marginRight: 12,
+    fontWeight: '800',
+    marginRight: 10,
+    letterSpacing: -0.4,
   },
   unitToggleBtn: {
-    backgroundColor: 'rgba(16, 27, 46, 0.8)',
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.6)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
   unitToggleText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
-    color: COLORS.primary,
   },
   zoneIconBox: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   spectrumContainer: {
-    marginBottom: 12,
+    marginBottom: 14,
   },
   spectrumHeader: {
     flexDirection: 'row',
@@ -218,17 +261,15 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   spectrumMark: {
-    fontSize: 10,
-    color: COLORS.textMuted,
+    fontSize: 10.5,
     fontWeight: '600',
   },
   spectrumTrack: {
     height: 8,
-    borderRadius: 4,
+    borderRadius: 6,
     flexDirection: 'row',
     overflow: 'visible',
     position: 'relative',
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
   },
   zoneSection: {
     height: '100%',
@@ -239,47 +280,41 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#070B14',
     borderWidth: 3,
     marginLeft: -9,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 3,
   },
   adviceCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 14,
+    padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.35)',
     marginBottom: 12,
   },
   adviceIcon: {
-    marginRight: 8,
+    marginRight: 9,
     marginTop: 2,
   },
   adviceContent: {
     flex: 1,
   },
   adviceTitle: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginBottom: 2,
   },
   adviceText: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
+    fontSize: 11.5,
     lineHeight: 16,
   },
   factorsRow: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(30, 41, 59, 0.3)',
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 12,
+    padding: 11,
     marginBottom: 10,
   },
   factorItem: {
@@ -287,20 +322,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   factorLabel: {
-    fontSize: 10,
-    color: COLORS.textMuted,
+    fontSize: 10.5,
     fontWeight: '600',
   },
   factorValue: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     marginTop: 2,
   },
   factorDivider: {
     width: 1,
     height: 24,
-    backgroundColor: 'rgba(51, 65, 85, 0.4)',
   },
   simControlsRow: {
     alignItems: 'center',
@@ -309,18 +341,14 @@ const styles = StyleSheet.create({
   simBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 242, 254, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.25)',
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   simBtnText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
-    color: COLORS.primary,
     marginLeft: 6,
   },
 });
-

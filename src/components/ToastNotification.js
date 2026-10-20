@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export function ToastNotification({ visible, message, onHide }) {
+  const { theme, isDark } = useTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -11,7 +12,7 @@ export function ToastNotification({ visible, message, onHide }) {
       Animated.sequence([
         Animated.timing(anim, {
           toValue: 1,
-          duration: 200,
+          duration: 220,
           useNativeDriver: true,
         }),
         Animated.delay(2200),
@@ -46,9 +47,18 @@ export function ToastNotification({ visible, message, onHide }) {
       ]}
       pointerEvents="none"
     >
-      <View style={styles.toastCard}>
-        <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} style={styles.toastIcon} />
-        <Text style={styles.toastText}>{message}</Text>
+      <View
+        style={[
+          styles.toastCard,
+          {
+            backgroundColor: theme.cardElevated,
+            borderColor: theme.cardBorder,
+          },
+          theme.cardShadow,
+        ]}
+      >
+        <Ionicons name="checkmark-circle" size={19} color={theme.success} style={styles.toastIcon} />
+        <Text style={[styles.toastText, { color: theme.textPrimary }]}>{message}</Text>
       </View>
     </Animated.View>
   );
@@ -57,7 +67,7 @@ export function ToastNotification({ visible, message, onHide }) {
 const styles = StyleSheet.create({
   toastContainer: {
     position: 'absolute',
-    top: 60,
+    top: 55,
     left: 20,
     right: 20,
     alignItems: 'center',
@@ -66,25 +76,17 @@ const styles = StyleSheet.create({
   toastCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.96)',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.4)',
-    shadowColor: '#00F2FE',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
   },
   toastIcon: {
-    marginRight: 10,
+    marginRight: 9,
   },
   toastText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#F8FAFC',
+    letterSpacing: -0.2,
   },
 });
-

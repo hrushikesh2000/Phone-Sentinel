@@ -7,30 +7,36 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { SectionCard } from './SectionCard';
 import { StatBadge } from './StatBadge';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../context/ThemeContext';
 import { analyzeSystemHealth } from '../utils/healthDiagnostics';
 
 export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
+  const { theme, isDark } = useTheme();
+
   const [isScanning, setIsScanning] = useState(false);
   const [scanStep, setScanStep] = useState('');
   const [diagnosticResult, setDiagnosticResult] = useState(null);
 
   const runHealthScan = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (e) {}
+
     setIsScanning(true);
-    setScanStep('Auditing RAM capacity & JVM allocation...');
+    setScanStep('Auditing RAM headroom & memory...');
 
     setTimeout(() => {
-      setScanStep('Evaluating battery discharge rate & telemetry...');
+      setScanStep('Analyzing battery thermal balance & load...');
     }, 450);
 
     setTimeout(() => {
-      setScanStep('Verifying storage headroom & network interface...');
+      setScanStep('Verifying storage space & network stability...');
     }, 900);
 
     setTimeout(() => {
-      // Execute the algorithmic analysis
       const result = analyzeSystemHealth({
         totalMemoryBytes: hardware.totalMemory,
         maxMemoryBytes: hardware.maxMemory,
@@ -47,6 +53,10 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
         },
       });
 
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (e) {}
+
       setDiagnosticResult(result);
       setIsScanning(false);
       setScanStep('');
@@ -55,33 +65,37 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
 
   return (
     <SectionCard
-      icon="pulse-outline"
-      iconColor={COLORS.primary}
-      title="Smart Health Check"
-      subtitle="Comprehensive multi-vector system diagnostic"
-      accentColor={COLORS.primary}
-      badge={<StatBadge label="HEALTH AUDIT" variant="cyan" size="small" />}
+      icon="shield-checkmark-outline"
+      iconColor={theme.primary}
+      title="System Health Audit"
+      subtitle="Comprehensive performance & diagnostic analysis"
+      badge={<StatBadge label="Diagnostic" variant="primary" size="small" />}
     >
       {/* Prominent Scan Action Button */}
       <TouchableOpacity
-        style={[styles.scanButton, isScanning && styles.scanButtonActive]}
+        style={[
+          styles.scanButton,
+          {
+            backgroundColor: theme.primary,
+          },
+        ]}
         onPress={runHealthScan}
         disabled={isScanning}
         activeOpacity={0.85}
       >
         {isScanning ? (
           <View style={styles.scanningContent}>
-            <ActivityIndicator size="small" color="#090D16" style={styles.spinner} />
+            <ActivityIndicator size="small" color="#FFFFFF" style={styles.spinner} />
             <View>
-              <Text style={styles.scanButtonTextActive}>SCANNING HARDWARE...</Text>
+              <Text style={styles.scanButtonTextActive}>RUNNING HEALTH AUDIT...</Text>
               <Text style={styles.scanStepSubtext}>{scanStep}</Text>
             </View>
           </View>
         ) : (
           <View style={styles.buttonInner}>
-            <Ionicons name="shield-checkmark" size={22} color="#090D16" style={styles.btnIcon} />
+            <Ionicons name="sparkles" size={20} color="#FFFFFF" style={styles.btnIcon} />
             <Text style={styles.scanButtonText}>
-              {diagnosticResult ? 'Re-Scan System Health' : 'Scan System Health'}
+              {diagnosticResult ? 'Re-Run System Audit' : 'Scan System Health'}
             </Text>
           </View>
         )}
@@ -89,14 +103,30 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
 
       {/* Diagnostics Result Card */}
       {diagnosticResult && (
-        <View style={styles.resultContainer}>
+        <View style={[styles.resultContainer, { borderTopColor: theme.divider }]}>
           {/* Top Score Banner */}
-          <View style={styles.scoreRow}>
-            <View style={styles.scoreCircle}>
+          <View
+            style={[
+              styles.scoreRow,
+              {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9',
+                borderColor: theme.cardBorder,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.scoreCircle,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: diagnosticResult.badgeColor,
+                },
+              ]}
+            >
               <Text style={[styles.scoreNumber, { color: diagnosticResult.badgeColor }]}>
                 {diagnosticResult.score}
               </Text>
-              <Text style={styles.scoreOutOf}>/ 100</Text>
+              <Text style={[styles.scoreOutOf, { color: theme.textMuted }]}>/ 100</Text>
             </View>
 
             <View style={styles.verdictContainer}>
@@ -105,7 +135,7 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
                   label={diagnosticResult.status}
                   variant={
                     diagnosticResult.score >= 85
-                      ? 'cyan'
+                      ? 'primary'
                       : diagnosticResult.score >= 70
                       ? 'success'
                       : diagnosticResult.score >= 50
@@ -114,16 +144,29 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
                   }
                 />
               </View>
-              <Text style={styles.mainHeadline}>{diagnosticResult.mainHeadline}</Text>
+              <Text style={[styles.mainHeadline, { color: theme.textPrimary }]}>
+                {diagnosticResult.mainHeadline}
+              </Text>
             </View>
           </View>
 
           {/* Subsystem Score Breakdown */}
           <View style={styles.breakdownGrid}>
             {Object.entries(diagnosticResult.breakdown).map(([key, item]) => (
-              <View key={key} style={styles.breakdownCard}>
-                <Text style={styles.breakdownTitle}>{item.title}</Text>
-                <View style={styles.breakdownProgressTrack}>
+              <View
+                key={key}
+                style={[
+                  styles.breakdownCard,
+                  {
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                    borderColor: theme.cardBorder,
+                  },
+                ]}
+              >
+                <Text style={[styles.breakdownTitle, { color: theme.textSecondary }]}>
+                  {item.title}
+                </Text>
+                <View style={[styles.breakdownProgressTrack, { backgroundColor: theme.trackBg }]}>
                   <View
                     style={[
                       styles.breakdownProgressFill,
@@ -131,45 +174,59 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
                         width: `${item.score}%`,
                         backgroundColor:
                           item.score >= 85
-                            ? COLORS.primary
+                            ? theme.primary
                             : item.score >= 70
-                            ? COLORS.success
+                            ? theme.success
                             : item.score >= 50
-                            ? COLORS.warning
-                            : COLORS.danger,
+                            ? theme.warning
+                            : theme.danger,
                       },
                     ]}
                   />
                 </View>
-                <Text style={styles.breakdownScoreText}>{item.score} / 100</Text>
+                <Text style={[styles.breakdownScoreText, { color: theme.textPrimary }]}>
+                  {item.score} / 100
+                </Text>
               </View>
             ))}
           </View>
 
           {/* Contextual Recommendations */}
-          <View style={styles.recommendationsBox}>
+          <View
+            style={[
+              styles.recommendationsBox,
+              {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                borderColor: theme.cardBorder,
+              },
+            ]}
+          >
             <View style={styles.recHeaderRow}>
-              <Ionicons name="information-circle" size={18} color={COLORS.secondary} />
-              <Text style={styles.recHeaderTitle}>Contextual System Recommendations</Text>
+              <Ionicons name="bulb-outline" size={18} color={theme.primary} />
+              <Text style={[styles.recHeaderTitle, { color: theme.textPrimary }]}>
+                Actionable System Insights
+              </Text>
             </View>
 
             {diagnosticResult.recommendations.map((rec, idx) => (
               <View key={idx} style={styles.recItem}>
                 <Ionicons
-                  name="chevron-forward-circle"
-                  size={15}
-                  color={diagnosticResult.score >= 75 ? COLORS.accent : COLORS.warning}
+                  name="checkmark-circle-outline"
+                  size={16}
+                  color={diagnosticResult.score >= 75 ? theme.success : theme.warning}
                   style={styles.bulletIcon}
                 />
-                <Text style={styles.recText}>{rec}</Text>
+                <Text style={[styles.recText, { color: theme.textSecondary }]}>{rec}</Text>
               </View>
             ))}
 
             {diagnosticResult.issues.length > 0 && (
-              <View style={styles.issuesBox}>
-                <Text style={styles.issuesHeader}>Detected Telemetry Flags:</Text>
+              <View style={[styles.issuesBox, { borderTopColor: theme.divider }]}>
+                <Text style={[styles.issuesHeader, { color: theme.warning }]}>
+                  Items to note:
+                </Text>
                 {diagnosticResult.issues.map((issue, idx) => (
-                  <Text key={idx} style={styles.issueText}>
+                  <Text key={idx} style={[styles.issueText, { color: theme.textSecondary }]}>
                     • {issue}
                   </Text>
                 ))}
@@ -184,20 +241,16 @@ export function HealthCheckCard({ hardware, batteryData, networkInfo }) {
 
 const styles = StyleSheet.create({
   scanButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 14,
-    paddingVertical: 15,
+    borderRadius: 16,
+    paddingVertical: 14,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: COLORS.primary,
+    shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  scanButtonActive: {
-    backgroundColor: '#38BDF8',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
   buttonInner: {
     flexDirection: 'row',
@@ -207,10 +260,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   scanButtonText: {
-    color: '#090D16',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: -0.2,
   },
   scanningContent: {
     flexDirection: 'row',
@@ -220,51 +273,45 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   scanButtonTextActive: {
-    color: '#090D16',
-    fontSize: 14,
+    color: '#FFFFFF',
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
   },
   scanStepSubtext: {
-    color: '#0F172A',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     marginTop: 1,
   },
   resultContainer: {
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(51, 65, 85, 0.4)',
   },
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(30, 41, 59, 0.6)',
-    borderRadius: 14,
+    borderRadius: 18,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.5)',
   },
   scoreCircle: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     borderWidth: 2.5,
-    borderColor: 'rgba(56, 189, 248, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
   },
   scoreNumber: {
-    fontSize: 26,
-    fontWeight: '900',
-    lineHeight: 28,
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 26,
   },
   scoreOutOf: {
     fontSize: 10,
-    color: COLORS.textMuted,
     fontWeight: '700',
   },
   verdictContainer: {
@@ -275,54 +322,46 @@ const styles = StyleSheet.create({
   },
   mainHeadline: {
     fontSize: 13,
-    color: COLORS.textPrimary,
     fontWeight: '600',
     lineHeight: 18,
   },
   breakdownGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
     marginTop: 12,
   },
   breakdownCard: {
     flex: 1,
-    minWidth: '45%',
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
-    borderRadius: 10,
-    padding: 10,
+    minWidth: '46%',
+    borderRadius: 14,
+    padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.35)',
   },
   breakdownTitle: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
+    fontSize: 11.5,
     fontWeight: '600',
   },
   breakdownProgressTrack: {
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(51, 65, 85, 0.4)',
+    height: 6,
+    borderRadius: 4,
     marginVertical: 6,
     overflow: 'hidden',
   },
   breakdownProgressFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
   },
   breakdownScoreText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
-    color: COLORS.textPrimary,
     textAlign: 'right',
   },
   recommendationsBox: {
     marginTop: 12,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.4)',
   },
   recHeaderRow: {
     flexDirection: 'row',
@@ -330,10 +369,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   recHeaderTitle: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '700',
-    color: COLORS.textHighlight,
-    marginLeft: 6,
+    marginLeft: 7,
   },
   recItem: {
     flexDirection: 'row',
@@ -346,7 +384,6 @@ const styles = StyleSheet.create({
   },
   recText: {
     fontSize: 12,
-    color: COLORS.textPrimary,
     lineHeight: 17,
     flex: 1,
   },
@@ -354,18 +391,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(51, 65, 85, 0.3)',
   },
   issuesHeader: {
     fontSize: 11,
     fontWeight: '700',
-    color: COLORS.warning,
     marginBottom: 4,
   },
   issueText: {
-    fontSize: 11,
-    color: '#FDE68A',
+    fontSize: 11.5,
     lineHeight: 16,
   },
 });
-

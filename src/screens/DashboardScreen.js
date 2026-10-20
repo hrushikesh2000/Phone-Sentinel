@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SectionCard } from '../components/SectionCard';
 import { StatBadge } from '../components/StatBadge';
-import { COLORS } from '../styles/theme';
+import { HardwarePassportModal } from '../components/HardwarePassportModal';
+import { useTheme } from '../context/ThemeContext';
 import { formatBytes, formatBatteryLevel, formatUptime } from '../utils/formatters';
 import { estimateBatteryTemperature } from '../utils/batteryThermal';
 
@@ -15,6 +16,9 @@ export function DashboardScreen({
   onNavigate,
   onCopyReport,
 }) {
+  const { theme, isDark } = useTheme();
+  const [passportVisible, setPassportVisible] = useState(false);
+
   const percentage = batteryData.batteryLevel !== null ? Math.round(batteryData.batteryLevel * 100) : 0;
   const isCharging = batteryData.batteryState === 2 || batteryData.batteryState === 3;
 
@@ -41,35 +45,56 @@ export function DashboardScreen({
 
   return (
     <View style={styles.container}>
-      {/* 1. Hero Device Header Card */}
-      <View style={styles.heroCard}>
+      {/* 1. Hero Summary Card */}
+      <View
+        style={[
+          styles.heroCard,
+          {
+            backgroundColor: theme.card,
+            borderColor: theme.cardBorder,
+          },
+          theme.cardShadow,
+        ]}
+      >
         <View style={styles.heroTopRow}>
-          <View style={styles.heroDeviceIcon}>
-            <Ionicons name="phone-portrait" size={24} color={COLORS.primary} />
+          <View style={[styles.heroDeviceIcon, { backgroundColor: theme.primaryLight }]}>
+            <Ionicons name="phone-portrait-outline" size={24} color={theme.primary} />
           </View>
           <View style={styles.heroDeviceInfo}>
-            <Text style={styles.heroModelText} numberOfLines={1}>
-              {hardware.modelName || 'Mobile Terminal'}
+            <Text style={[styles.heroModelText, { color: theme.textPrimary }]} numberOfLines={1}>
+              {hardware.modelName || 'Android Device'}
             </Text>
-            <Text style={styles.heroBrandText}>
-              {hardware.brand ? hardware.brand.toUpperCase() : 'ANDROID'} • {hardware.osName} {hardware.osVersion}
+            <Text style={[styles.heroBrandText, { color: theme.textSecondary }]}>
+              {hardware.brand ? hardware.brand.toUpperCase() : 'MOBILE'} • {hardware.osName} {hardware.osVersion}
             </Text>
           </View>
           <StatBadge
-            label={hardware.isDevice ? 'HARDWARE' : 'SIMULATOR'}
+            label={hardware.isDevice ? 'Verified Device' : 'Simulator'}
             variant={hardware.isDevice ? 'success' : 'warning'}
             size="small"
           />
         </View>
 
+        {/* Friendly Subtitle & Live Status */}
+        <View style={[styles.heroStatusBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9' }]}>
+          <View style={styles.statusLeft}>
+            <Ionicons name="checkmark-circle" size={17} color={theme.success} />
+            <Text style={[styles.statusText, { color: theme.textPrimary }]}>
+              All core systems operating nominally
+            </Text>
+          </View>
+        </View>
+
         {/* Uptime and Thermal Status Bar */}
-        <View style={styles.heroSubBar}>
+        <View style={[styles.heroSubBar, { borderTopColor: theme.divider }]}>
           <View style={styles.heroSubItem}>
-            <Ionicons name="time-outline" size={13} color={COLORS.textMuted} />
-            <Text style={styles.heroSubText}>Uptime: {formatUptime(hardware.uptime)}</Text>
+            <Ionicons name="time-outline" size={13} color={theme.textMuted} />
+            <Text style={[styles.heroSubText, { color: theme.textSecondary }]}>
+              Uptime: {formatUptime(hardware.uptime)}
+            </Text>
           </View>
 
-          <View style={styles.heroSubDivider} />
+          <View style={[styles.heroSubDivider, { backgroundColor: theme.divider }]} />
 
           <View style={styles.heroSubItem}>
             <Ionicons name="thermometer-outline" size={13} color={thermal.zone.color} />
@@ -83,149 +108,251 @@ export function DashboardScreen({
       {/* 2. Critical Alert Banner (if abnormal drain detected) */}
       {batteryData.isDrainAbnormal && (
         <TouchableOpacity
-          style={styles.alertCard}
+          style={[
+            styles.alertCard,
+            {
+              backgroundColor: theme.dangerBg,
+              borderColor: `${theme.danger}44`,
+            },
+          ]}
           onPress={() => handleAction('battery')}
           activeOpacity={0.8}
         >
-          <Ionicons name="warning" size={20} color={COLORS.danger} style={styles.alertIcon} />
+          <Ionicons name="warning-outline" size={20} color={theme.danger} style={styles.alertIcon} />
           <View style={styles.alertContent}>
-            <Text style={styles.alertHeading}>Abnormal Rapid Drain Detected!</Text>
-            <Text style={styles.alertSub}>
-              Discharge rate is elevated ({batteryData.drainRatePerHour?.toFixed(1)}%/hr). Tap to inspect battery telemetry.
+            <Text style={[styles.alertHeading, { color: theme.danger }]}>Rapid Battery Drain Detected</Text>
+            <Text style={[styles.alertSub, { color: theme.textSecondary }]}>
+              Consumption rate is elevated ({batteryData.drainRatePerHour?.toFixed(1)}%/hr). Tap to view battery details.
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.danger} />
+          <Ionicons name="chevron-forward" size={18} color={theme.danger} />
         </TouchableOpacity>
       )}
 
-      {/* 3. 4-Box Telemetry Matrix */}
+      {/* 3. The 4 Friendly Telemetry Cards */}
       <View style={styles.matrixGrid}>
         {/* Memory Box */}
         <TouchableOpacity
-          style={styles.matrixBox}
+          style={[
+            styles.matrixBox,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+            },
+            theme.cardShadow,
+          ]}
           onPress={() => handleAction('hardware')}
           activeOpacity={0.75}
         >
           <View style={styles.matrixBoxHeader}>
-            <Ionicons name="hardware-chip-outline" size={18} color={COLORS.primary} />
-            <Text style={styles.matrixBoxLabel}>RAM MEMORY</Text>
+            <View style={[styles.matrixIconCircle, { backgroundColor: theme.primaryLight }]}>
+              <Ionicons name="hardware-chip-outline" size={16} color={theme.primary} />
+            </View>
+            <Text style={[styles.matrixBoxLabel, { color: theme.textMuted }]}>MEMORY</Text>
           </View>
-          <Text style={styles.matrixBoxValue}>{formatBytes(hardware.totalMemory, 1)}</Text>
-          <Text style={styles.matrixBoxSub}>
+          <Text style={[styles.matrixBoxValue, { color: theme.textPrimary }]}>
+            {formatBytes(hardware.totalMemory, 1)}
+          </Text>
+          <Text style={[styles.matrixBoxSub, { color: theme.textSecondary }]}>
             {hardware.maxMemory ? `Heap: ${formatBytes(hardware.maxMemory, 1)}` : 'Physical RAM'}
           </Text>
         </TouchableOpacity>
 
         {/* Battery & Thermal Box */}
         <TouchableOpacity
-          style={styles.matrixBox}
+          style={[
+            styles.matrixBox,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+            },
+            theme.cardShadow,
+          ]}
           onPress={() => handleAction('battery')}
           activeOpacity={0.75}
         >
           <View style={styles.matrixBoxHeader}>
-            <Ionicons
-              name={isCharging ? 'flash-outline' : 'battery-charging-outline'}
-              size={18}
-              color={isCharging ? COLORS.primary : percentage <= 20 ? COLORS.danger : COLORS.accent}
-            />
-            <Text style={styles.matrixBoxLabel}>BATTERY</Text>
+            <View
+              style={[
+                styles.matrixIconCircle,
+                {
+                  backgroundColor: isCharging
+                    ? theme.primaryLight
+                    : percentage <= 20
+                    ? theme.dangerBg
+                    : theme.successBg,
+                },
+              ]}
+            >
+              <Ionicons
+                name={isCharging ? 'flash' : 'battery-charging'}
+                size={16}
+                color={
+                  isCharging
+                    ? theme.primary
+                    : percentage <= 20
+                    ? theme.danger
+                    : theme.success
+                }
+              />
+            </View>
+            <Text style={[styles.matrixBoxLabel, { color: theme.textMuted }]}>BATTERY</Text>
           </View>
-          <Text style={[styles.matrixBoxValue, isCharging && { color: COLORS.primary }]}>
+          <Text
+            style={[
+              styles.matrixBoxValue,
+              { color: isCharging ? theme.primary : theme.textPrimary },
+            ]}
+          >
             {formatBatteryLevel(batteryData.batteryLevel)}
           </Text>
-          <Text style={styles.matrixBoxSub}>
-            {thermal.celsius}°C • {isCharging ? 'Charging' : 'Nominal'}
+          <Text style={[styles.matrixBoxSub, { color: theme.textSecondary }]}>
+            {thermal.celsius}°C • {isCharging ? 'Charging' : 'Normal'}
           </Text>
         </TouchableOpacity>
 
         {/* Network Box */}
         <TouchableOpacity
-          style={styles.matrixBox}
+          style={[
+            styles.matrixBox,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+            },
+            theme.cardShadow,
+          ]}
           onPress={() => handleAction('network')}
           activeOpacity={0.75}
         >
           <View style={styles.matrixBoxHeader}>
-            <Ionicons name="wifi-outline" size={18} color={COLORS.secondary} />
-            <Text style={styles.matrixBoxLabel}>NETWORK</Text>
+            <View style={[styles.matrixIconCircle, { backgroundColor: theme.secondaryLight }]}>
+              <Ionicons name="wifi-outline" size={16} color={theme.secondary} />
+            </View>
+            <Text style={[styles.matrixBoxLabel, { color: theme.textMuted }]}>NETWORK</Text>
           </View>
-          <Text style={styles.matrixBoxValue} numberOfLines={1}>
+          <Text
+            style={[styles.matrixBoxValue, { color: theme.textPrimary }]}
+            numberOfLines={1}
+          >
             {networkInfo.connectionType || 'OFFLINE'}
           </Text>
-          <Text style={styles.matrixBoxSub} numberOfLines={1}>
-            {networkInfo.ipAddress || 'Unavailable'}
+          <Text
+            style={[styles.matrixBoxSub, { color: theme.textSecondary }]}
+            numberOfLines={1}
+          >
+            {networkInfo.ipAddress || 'Checking IP...'}
           </Text>
         </TouchableOpacity>
 
         {/* Storage Box */}
         <TouchableOpacity
-          style={styles.matrixBox}
+          style={[
+            styles.matrixBox,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+            },
+            theme.cardShadow,
+          ]}
           onPress={() => handleAction('hardware')}
           activeOpacity={0.75}
         >
           <View style={styles.matrixBoxHeader}>
-            <Ionicons name="folder-outline" size={18} color={COLORS.warning} />
-            <Text style={styles.matrixBoxLabel}>STORAGE</Text>
+            <View style={[styles.matrixIconCircle, { backgroundColor: theme.warningBg }]}>
+              <Ionicons name="folder-outline" size={16} color={theme.warning} />
+            </View>
+            <Text style={[styles.matrixBoxLabel, { color: theme.textMuted }]}>STORAGE</Text>
           </View>
-          <Text style={styles.matrixBoxValue}>
+          <Text style={[styles.matrixBoxValue, { color: theme.textPrimary }]}>
             {hardware.freeStorage ? `${formatBytes(hardware.freeStorage, 0)} Free` : 'Standard'}
           </Text>
-          <Text style={styles.matrixBoxSub}>
+          <Text style={[styles.matrixBoxSub, { color: theme.textSecondary }]}>
             {hardware.totalStorage ? `${storagePercent}% Used of ${formatBytes(hardware.totalStorage, 0)}` : 'Internal'}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* 4. Quick Action Command Hub */}
+      {/* 4. Quick Actions Hub */}
       <SectionCard
-        icon="apps-outline"
-        iconColor={COLORS.primary}
-        title="Diagnostic Control Center"
-        subtitle="Quick access to system testing tools"
-        accentColor={COLORS.primary}
+        icon="sparkles-outline"
+        iconColor={theme.primary}
+        title="Quick Diagnostic Tools"
+        subtitle="One-tap hardware checks & utilities"
       >
         <TouchableOpacity
-          style={styles.actionHubItem}
+          style={[styles.actionHubItem, { borderBottomColor: theme.divider }]}
           onPress={() => handleAction('lab')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionHubIcon, { backgroundColor: 'rgba(20, 184, 166, 0.12)' }]}>
-            <Ionicons name="radio-outline" size={20} color={COLORS.accent} />
+          <View style={[styles.actionHubIcon, { backgroundColor: theme.accentLight }]}>
+            <Ionicons name="radio-outline" size={20} color={theme.accent} />
           </View>
           <View style={styles.actionHubContent}>
-            <Text style={styles.actionHubTitle}>Haptic & Vibration Motor Test</Text>
-            <Text style={styles.actionHubDesc}>Test tactile actuator feedback with live visual ripple monitor.</Text>
+            <Text style={[styles.actionHubTitle, { color: theme.textPrimary }]}>
+              Haptic & Vibration Motor Test
+            </Text>
+            <Text style={[styles.actionHubDesc, { color: theme.textSecondary }]}>
+              Test tactile actuator feedback with real-time visual ripple monitor.
+            </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.actionHubItem}
+          style={[styles.actionHubItem, { borderBottomColor: theme.divider }]}
           onPress={() => handleAction('battery')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionHubIcon, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-            <Ionicons name="thermometer-outline" size={20} color={COLORS.warning} />
+          <View style={[styles.actionHubIcon, { backgroundColor: theme.warningBg }]}>
+            <Ionicons name="thermometer-outline" size={20} color={theme.warning} />
           </View>
           <View style={styles.actionHubContent}>
-            <Text style={styles.actionHubTitle}>Battery Thermal & Temperature Analysis</Text>
-            <Text style={styles.actionHubDesc}>Monitor cell temperature, thermal throttle risks & safety advice.</Text>
+            <Text style={[styles.actionHubTitle, { color: theme.textPrimary }]}>
+              Battery Thermal Analysis
+            </Text>
+            <Text style={[styles.actionHubDesc, { color: theme.textSecondary }]}>
+              Monitor core temperature, thermal safety spectrum & battery advice.
+            </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.actionHubItem}
+          style={[styles.actionHubItem, { borderBottomColor: theme.divider }]}
           onPress={() => handleAction('lab')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionHubIcon, { backgroundColor: 'rgba(0, 242, 254, 0.12)' }]}>
-            <Ionicons name="scan-outline" size={20} color={COLORS.primary} />
+          <View style={[styles.actionHubIcon, { backgroundColor: theme.primaryLight }]}>
+            <Ionicons name="scan-outline" size={20} color={theme.primary} />
           </View>
           <View style={styles.actionHubContent}>
-            <Text style={styles.actionHubTitle}>Display Dead-Pixel & Sensor Lab</Text>
-            <Text style={styles.actionHubDesc}>RGBW dead-pixel inspection and 3-axis accelerometer gravity horizon.</Text>
+            <Text style={[styles.actionHubTitle, { color: theme.textPrimary }]}>
+              Screen Dead-Pixel & Sensor Lab
+            </Text>
+            <Text style={[styles.actionHubDesc, { color: theme.textSecondary }]}>
+              Full-screen RGBW pixel test and live 3-axis accelerometer gravity horizon.
+            </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionHubItem, { borderBottomColor: theme.divider }]}
+          onPress={() => setPassportVisible(true)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.actionHubIcon, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+            <Ionicons name="shield-checkmark" size={20} color="#F59E0B" />
+          </View>
+          <View style={styles.actionHubContent}>
+            <Text style={[styles.actionHubTitle, { color: theme.textPrimary }]}>
+              Used-Phone Hardware Passport
+            </Text>
+            <Text style={[styles.actionHubDesc, { color: theme.textSecondary }]}>
+              Certified Grade A+ digital inspection card for buyers, sellers & audits.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#F59E0B" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -233,52 +360,55 @@ export function DashboardScreen({
           onPress={onCopyReport}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionHubIcon, { backgroundColor: 'rgba(56, 189, 248, 0.12)' }]}>
-            <Ionicons name="clipboard-outline" size={20} color={COLORS.secondary} />
+          <View style={[styles.actionHubIcon, { backgroundColor: theme.secondaryLight }]}>
+            <Ionicons name="document-text-outline" size={20} color={theme.secondary} />
           </View>
           <View style={styles.actionHubContent}>
-            <Text style={styles.actionHubTitle}>Export Diagnostics Report</Text>
-            <Text style={styles.actionHubDesc}>Copy comprehensive hardware specs to clipboard.</Text>
+            <Text style={[styles.actionHubTitle, { color: theme.textPrimary }]}>
+              Copy Full Technical Report
+            </Text>
+            <Text style={[styles.actionHubDesc, { color: theme.textSecondary }]}>
+              Share complete hardware & network specs to your clipboard.
+            </Text>
           </View>
-          <Ionicons name="copy-outline" size={18} color={COLORS.secondary} />
+          <Ionicons name="copy-outline" size={18} color={theme.secondary} />
         </TouchableOpacity>
       </SectionCard>
+
+      {/* Hardware Passport Modal */}
+      <HardwarePassportModal
+        visible={passportVisible}
+        onClose={() => setPassportVisible(false)}
+        hardware={hardware}
+        batteryData={batteryData}
+        networkInfo={networkInfo}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 20,
   },
   heroCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.25)',
-    padding: 16,
-    marginBottom: 14,
-    shadowColor: '#00F2FE',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
+    padding: 18,
+    marginBottom: 16,
   },
   heroTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   heroDeviceIcon: {
     width: 44,
     height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0, 242, 254, 0.12)',
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.3)',
   },
   heroDeviceInfo: {
     flex: 1,
@@ -286,47 +416,58 @@ const styles = StyleSheet.create({
   heroModelText: {
     fontSize: 17,
     fontWeight: '800',
-    color: COLORS.textPrimary,
+    letterSpacing: -0.3,
   },
   heroBrandText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     marginTop: 2,
+    fontWeight: '500',
+  },
+  heroStatusBox: {
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  statusLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 7,
   },
   heroSubBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 8,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(51, 65, 85, 0.4)',
   },
   heroSubItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   heroSubText: {
-    fontSize: 11,
-    color: COLORS.textMuted,
+    fontSize: 11.5,
     marginLeft: 6,
+    fontWeight: '500',
   },
   heroSubDivider: {
     width: 1,
     height: 14,
-    backgroundColor: 'rgba(51, 65, 85, 0.6)',
   },
   alertCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.dangerBg,
     borderWidth: 1,
-    borderColor: 'rgba(244, 63, 94, 0.35)',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 14,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
   },
   alertIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   alertContent: {
     flex: 1,
@@ -334,65 +475,66 @@ const styles = StyleSheet.create({
   alertHeading: {
     fontSize: 13,
     fontWeight: '800',
-    color: COLORS.danger,
     marginBottom: 2,
   },
   alertSub: {
-    fontSize: 11,
-    color: '#FECDD3',
-    lineHeight: 15,
+    fontSize: 11.5,
+    lineHeight: 16,
   },
   matrixGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 12,
     marginBottom: 16,
   },
   matrixBox: {
     flex: 1,
-    minWidth: '47%',
-    backgroundColor: COLORS.card,
-    borderRadius: 14,
+    minWidth: '46%',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.cardBorder,
-    padding: 14,
+    padding: 16,
   },
   matrixBoxHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  matrixIconCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
   },
   matrixBoxLabel: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '800',
-    color: COLORS.textMuted,
-    letterSpacing: 0.8,
-    marginLeft: 6,
+    letterSpacing: 0.6,
   },
   matrixBoxValue: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: COLORS.textPrimary,
+    fontSize: 20,
+    fontWeight: '800',
     marginBottom: 2,
+    letterSpacing: -0.4,
   },
   matrixBoxSub: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
+    fontSize: 11.5,
+    fontWeight: '500',
   },
   actionHubItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(51, 65, 85, 0.3)',
   },
   actionHubIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   actionHubContent: {
     flex: 1,
@@ -401,11 +543,11 @@ const styles = StyleSheet.create({
   actionHubTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    letterSpacing: -0.2,
   },
   actionHubDesc: {
-    fontSize: 11,
-    color: COLORS.textMuted,
+    fontSize: 11.5,
     marginTop: 2,
+    lineHeight: 16,
   },
 });

@@ -1,38 +1,40 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export function StatBadge({ label, variant = 'neutral', size = 'medium' }) {
-  let bgColor = 'rgba(148, 163, 184, 0.15)';
-  let textColor = COLORS.textSecondary;
-  let borderColor = 'rgba(148, 163, 184, 0.25)';
+  const { theme } = useTheme();
+
+  let bgColor = theme.pillBg;
+  let textColor = theme.textSecondary;
+  let borderColor = 'transparent';
 
   switch (variant) {
     case 'success':
-      bgColor = COLORS.successBg;
-      textColor = COLORS.success;
-      borderColor = 'rgba(16, 185, 129, 0.3)';
+      bgColor = theme.successBg;
+      textColor = theme.success;
+      borderColor = `${theme.success}33`;
       break;
     case 'cyan':
     case 'primary':
-      bgColor = 'rgba(0, 242, 254, 0.12)';
-      textColor = COLORS.primary;
-      borderColor = 'rgba(0, 242, 254, 0.3)';
+      bgColor = theme.primaryLight;
+      textColor = theme.primary;
+      borderColor = `${theme.primary}33`;
       break;
     case 'warning':
-      bgColor = COLORS.warningBg;
-      textColor = COLORS.warning;
-      borderColor = 'rgba(245, 158, 11, 0.3)';
+      bgColor = theme.warningBg;
+      textColor = theme.warning;
+      borderColor = `${theme.warning}33`;
       break;
     case 'danger':
-      bgColor = COLORS.dangerBg;
-      textColor = COLORS.danger;
-      borderColor = 'rgba(244, 63, 94, 0.3)';
+      bgColor = theme.dangerBg;
+      textColor = theme.danger;
+      borderColor = `${theme.danger}33`;
       break;
     case 'info':
-      bgColor = COLORS.infoBg;
-      textColor = COLORS.secondary;
-      borderColor = 'rgba(56, 189, 248, 0.3)';
+      bgColor = theme.infoBg;
+      textColor = theme.info;
+      borderColor = `${theme.info}33`;
       break;
   }
 
@@ -45,12 +47,12 @@ export function StatBadge({ label, variant = 'neutral', size = 'medium' }) {
         {
           backgroundColor: bgColor,
           borderColor: borderColor,
-          paddingHorizontal: isSmall ? 8 : 10,
+          paddingHorizontal: isSmall ? 8 : 12,
           paddingVertical: isSmall ? 3 : 5,
         },
       ]}
     >
-      <Text style={[styles.badgeText, { color: textColor, fontSize: isSmall ? 11 : 12 }]}>
+      <Text style={[styles.badgeText, { color: textColor, fontSize: isSmall ? 10.5 : 12 }]}>
         {label}
       </Text>
     </View>
@@ -68,8 +70,6 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontWeight: '700',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
+    letterSpacing: 0.2,
   },
 });
-

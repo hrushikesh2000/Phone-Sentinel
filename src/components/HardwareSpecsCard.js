@@ -3,10 +3,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { SectionCard } from './SectionCard';
 import { InfoRow } from './InfoRow';
 import { StatBadge } from './StatBadge';
-import { COLORS } from '../styles/theme';
+import { useTheme } from '../context/ThemeContext';
 import { formatBytes, formatUptime } from '../utils/formatters';
 
 export function HardwareSpecsCard({ hardware }) {
+  const { theme } = useTheme();
+
   const {
     brand,
     manufacturer,
@@ -40,22 +42,21 @@ export function HardwareSpecsCard({ hardware }) {
   return (
     <SectionCard
       icon="hardware-chip-outline"
-      iconColor={COLORS.primary}
-      title="Hardware & System Specs"
-      subtitle="Physical device & memory architecture"
-      accentColor={COLORS.primary}
-      badge={<StatBadge label="HARDWARE" variant="cyan" size="small" />}
+      iconColor={theme.primary}
+      title="Hardware & Specs"
+      subtitle="Device identity, memory capacity & processor"
+      badge={<StatBadge label="Hardware" variant="primary" size="small" />}
     >
       {/* Device Brand & Model */}
       <InfoRow
-        label="Device Brand"
+        label="Brand"
         value={brand ? brand.toUpperCase() : 'UNKNOWN'}
         subvalue={manufacturer && manufacturer !== brand ? `Mfr: ${manufacturer}` : null}
       />
 
       <InfoRow
-        label="Device Model"
-        value={modelName || 'Standard Mobile'}
+        label="Model"
+        value={modelName || 'Mobile Terminal'}
         highlight
       />
 
@@ -63,7 +64,7 @@ export function HardwareSpecsCard({ hardware }) {
       <InfoRow
         label="Operating System"
         value={`${osName || 'Android'} ${osVersion || ''}`}
-        subvalue={platformApiLevel ? `Platform API Level: ${platformApiLevel}` : null}
+        subvalue={platformApiLevel ? `Android API Level: ${platformApiLevel}` : null}
       />
 
       {/* Total RAM capacity */}
@@ -71,21 +72,21 @@ export function HardwareSpecsCard({ hardware }) {
         label="Total RAM Capacity"
         value={formattedRAM}
         highlight
-        subvalue={maxMemory ? `JVM Heap Limit: ${formattedMaxVM}` : 'Physical Kernel Memory'}
+        subvalue={maxMemory ? `JVM Heap Limit: ${formattedMaxVM}` : 'Physical Memory'}
       />
 
       {/* Storage Capacity Visual Bar */}
       {totalStorage ? (
-        <View style={styles.storageSection}>
+        <View style={[styles.storageSection, { borderBottomColor: theme.divider }]}>
           <View style={styles.storageHeader}>
-            <Text style={styles.storageLabel}>Internal Storage Capacity</Text>
-            <Text style={styles.storageUsageText}>
+            <Text style={[styles.storageLabel, { color: theme.textSecondary }]}>Internal Storage</Text>
+            <Text style={[styles.storageUsageText, { color: theme.textPrimary }]}>
               {formattedUsedStorage} / {formattedTotalStorage} ({storagePercentUsed}%)
             </Text>
           </View>
 
-          {/* Custom Dual-Tone Storage Bar */}
-          <View style={styles.storageTrack}>
+          {/* Smooth Soft Storage Bar */}
+          <View style={[styles.storageTrack, { backgroundColor: theme.trackBg }]}>
             <View
               style={[
                 styles.storageFill,
@@ -93,19 +94,21 @@ export function HardwareSpecsCard({ hardware }) {
                   width: `${storagePercentUsed}%`,
                   backgroundColor:
                     storagePercentUsed > 90
-                      ? COLORS.danger
+                      ? theme.danger
                       : storagePercentUsed > 75
-                      ? COLORS.warning
-                      : COLORS.accent,
+                      ? theme.warning
+                      : theme.accent,
                 },
               ]}
             />
           </View>
 
           <View style={styles.storageFooter}>
-            <Text style={styles.storageFooterText}>Free: {formattedFreeStorage}</Text>
-            <Text style={styles.storageFooterText}>
-              {storagePercentUsed > 90 ? 'Low Space' : 'Nominal Headroom'}
+            <Text style={[styles.storageFooterText, { color: theme.textMuted }]}>
+              Free Space: {formattedFreeStorage}
+            </Text>
+            <Text style={[styles.storageFooterText, { color: theme.textMuted }]}>
+              {storagePercentUsed > 90 ? 'Low Storage Warning' : 'Healthy Headroom'}
             </Text>
           </View>
         </View>
@@ -120,7 +123,7 @@ export function HardwareSpecsCard({ hardware }) {
       {/* CPU Architectures */}
       {supportedCpuArchitectures && supportedCpuArchitectures.length > 0 && (
         <InfoRow
-          label="CPU Architecture"
+          label="Processor Architecture"
           value={supportedCpuArchitectures.slice(0, 2).join(', ')}
         />
       )}
@@ -137,9 +140,8 @@ export function HardwareSpecsCard({ hardware }) {
 
 const styles = StyleSheet.create({
   storageSection: {
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(51, 65, 85, 0.35)',
   },
   storageHeader: {
     flexDirection: 'row',
@@ -149,33 +151,29 @@ const styles = StyleSheet.create({
   },
   storageLabel: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     fontWeight: '500',
   },
   storageUsageText: {
-    fontSize: 12,
-    color: COLORS.textPrimary,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '700',
   },
   storageTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(51, 65, 85, 0.4)',
+    height: 9,
+    borderRadius: 6,
     overflow: 'hidden',
-    marginVertical: 4,
+    marginVertical: 5,
   },
   storageFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 6,
   },
   storageFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 4,
+    marginTop: 5,
   },
   storageFooterText: {
     fontSize: 11,
-    color: COLORS.textMuted,
+    fontWeight: '500',
   },
 });
-
